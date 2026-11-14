@@ -35,27 +35,23 @@ tailscale switch &lt;name&gt;        # the name or ID the list shows</code></pre
 <p>Certificates are recorded in public Certificate Transparency logs, so every machine that gets one has its name published. Don't give machines names you'd mind being public.</p>
 
 <h2 id="policy">5. The policy file</h2>
-<p>Under <strong>Access controls</strong>, replace the default policy with this one. It uses two tags: <code>tag:vt100</code> for servers that run vt100 things, and <code>tag:ci</code> for the machine that runs Punchcard. One server can carry both.</p>
+<p>Under <strong>Access controls</strong>, replace the default policy with this one. It uses one tag, <code>tag:vt100</code>, for servers that run vt100 things.</p>
 <pre><code>{
   // Who may put which tag on a machine. Only me.
   "tagOwners": {
     "tag:vt100": ["autogroup:admin"],
-    "tag:ci":    ["autogroup:admin"],
   },
 
   // Network access.
   "grants": [
-    // My own devices reach everything.
+    // My own devices reach everything. Servers reach nothing.
     {"src": ["autogroup:member"], "dst": ["*"], "ip": ["*"]},
-    // Punchcard reaches the servers it deploys to, over SSH only.
-    {"src": ["tag:ci"], "dst": ["tag:vt100"], "ip": ["tcp:22"]},
   ],
 
   // Tailscale SSH: no authorized_keys anywhere.
   "ssh": [
     {"action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self"], "users": ["autogroup:nonroot", "root"]},
     {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:vt100"], "users": ["root", "deploy"]},
-    {"action": "accept", "src": ["tag:ci"], "dst": ["tag:vt100"], "users": ["deploy"]},
   ],
 
   // My own devices may publish a port to the internet with Funnel.
@@ -65,14 +61,14 @@ tailscale switch &lt;name&gt;        # the name or ID the list shows</code></pre
 
   // Checked on save: the policy is rejected if this doesn't hold.
   "sshTests": [
-    {"src": "tag:ci", "dst": ["tag:vt100"], "accept": ["deploy"], "deny": ["root"]},
+    {"src": "tag:vt100", "dst": ["tag:vt100"], "deny": ["root", "deploy"]},
   ],
 }</code></pre>
 <p>What it means:</p>
 <ul>
 <li><strong>My devices</strong> reach everything, and can log in to the servers as <code>root</code> or <code>deploy</code>.</li>
-<li><strong>The CI machine</strong> can reach the servers only on SSH, and only as <code>deploy</code>. That's enough for <code>unit deploy</code>, and a build that goes wrong can't become root on a server.</li>
-<li><strong>The servers</strong> can't start connections to my devices. No rule lets them, so a compromised server can't reach my laptop.</li>
+<li><strong>The servers</strong> can't start connections to anything: not my devices, not each other, not themselves over SSH. No rule lets them, so a compromised server, or a bad build on Punchcard's server, reaches no further.</li>
+<li><strong>Deploys run from my laptop.</strong> I once gave Punchcard's server a <code>tag:ci</code> that could SSH to servers as <code>deploy</code>, so it could deploy one day. But Tailscale checks the machine, not the program: every build on that server got the same right, and <code>deploy</code> can become root. Deploys from a laptop have a person behind them, who sees them go wrong.</li>
 <li><strong>SSH rules use <code>accept</code>, not <code>check</code>.</strong> <code>check</code> asks a human to approve each login in a browser. That's good for people on sensitive machines, but it blocks deploys that run on their own.</li>
 <li><strong>No email addresses.</strong> <code>autogroup:admin</code> and <code>autogroup:member</code> mean me, whichever account I signed up with. If you'd rather see your name, write <code>"you@github"</code> instead; it's the same while you're the only user.</li>
 </ul>
@@ -90,7 +86,7 @@ tailscale funnel --https=443 off         # turn it off</code></pre>
 <p>A new server joins the tailnet the first time it starts, with an auth key from <strong>Settings › Keys</strong>:</p>
 <ul>
 <li><strong>Pre-approved</strong>, so it doesn't wait for me to approve it.</li>
-<li><strong>Tags:</strong> <code>tag:vt100</code>, plus <code>tag:ci</code> for the machine that runs Punchcard.</li>
+<li><strong>Tags:</strong> <code>tag:vt100</code>.</li>
 <li><strong>Not ephemeral</strong>, so it stays in the tailnet after a restart.</li>
 <li><strong>Single use, with a short expiry.</strong> The key ends up in the server's first-boot data, which can be read from inside the server afterwards. A used, expired key is worthless.</li>
 </ul>
@@ -102,6 +98,7 @@ tailscale funnel --https=443 off         # turn it off</code></pre>
 <li>Funnel left on after moving to a server keeps a laptop port public. Turn it off with <code>tailscale funnel --https=443 off</code>.</li>
 <li><code>tailscale login</code> switches to the new account right away. Anything published with Funnel on the old account stops until you switch back.</li>
 <li><code>sudo</code> can't ask for a password from a tool that runs commands for you without a terminal. Run it yourself.</li>
+<li>Tags grant rights to a machine, so to every program on it. A tag on a CI server is a right for every build it runs.</li>
 <li>The <code>check</code> SSH mode on my work tailnet made every login wait for a browser. Fine for me, impossible for a deploy.</li>
 </ul>
 </article>
