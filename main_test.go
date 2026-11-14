@@ -61,14 +61,17 @@ func TestGuides(t *testing.T) {
 }
 
 func TestPrinciples(t *testing.T) {
-	resp, body := get(t, "/principles")
-	if resp.StatusCode != http.StatusOK || !strings.Contains(body, "<title>Principles · vt100</title>") {
-		t.Fatalf("status %d", resp.StatusCode)
+	// The page was merged into the front page; old links still land.
+	if resp, _ := get(t, "/principles"); resp.StatusCode != http.StatusMovedPermanently {
+		t.Errorf("/principles: status %d", resp.StatusCode)
 	}
-	// Each tool resolves a principle.
+	_, home := get(t, "/")
 	for _, tool := range tools {
-		if !strings.Contains(body, `href="/tools/`+tool.Name+`"`) {
-			t.Errorf("principles page has no link to %s", tool.Name)
+		if tool.Principle == "" || tool.Broken == "" || tool.Answer == "" {
+			t.Errorf("%s has no principle", tool.Name)
+		}
+		if !strings.Contains(home, tool.Principle) {
+			t.Errorf("front page lacks %s's principle", tool.Name)
 		}
 	}
 }
@@ -95,7 +98,7 @@ func TestNotFound(t *testing.T) {
 // but the binary.
 func TestPagesOnlyReferToEmbeddedFiles(t *testing.T) {
 	_, css := get(t, "/static/site.css")
-	pages := []string{"/", "/tools/punchcard", "/principles"}
+	pages := []string{"/", "/tools/punchcard"}
 	var refs []string
 	for _, p := range pages {
 		_, body := get(t, p)

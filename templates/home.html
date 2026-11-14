@@ -1,21 +1,34 @@
 {{define "content"}}
 <section class="hero">
 <h1>Calm architecture.</h1>
-<p class="lead">And the small tools I use to run my hobby projects calmly.</p>
-<p class="muted">Each tool is one binary that leans on something solid that is already there. No platform, no daemon of its own, nothing to keep in sync. They are opinionated, and shared because sharing costs nothing.</p>
-<p><a href="/principles">The principles behind them →</a></p>
+<p class="lead">Small tools I run my hobby projects with. Each one exists because something I believe in kept getting broken.</p>
+<p class="muted">The idea is Bret Victor's, from <a href="https://vimeo.com/36579366">Inventing on Principle</a>: hold a principle, notice where the world breaks it, and build the thing that fixes it.</p>
 </section>
 
 <section id="tools" aria-labelledby="tools-h">
-<h2 id="tools-h" class="eyebrow">Tools</h2>
+<h2 id="tools-h" class="eyebrow">Principles, and the tool for each</h2>
 <div class="cards">
 {{range .Tools}}
 <a class="card" href="/tools/{{.Name}}">
-<span class="card-name">{{.Name}}</span>
-<span>{{.Tagline}}</span>
-<span class="tags">{{range .LeansOn}}<span class="tag">{{.}}</span>{{end}}</span>
+<span class="principle">{{.Principle}}</span>
+<span class="muted-small">{{.Broken}}</span>
+<span><span class="card-name">{{.Name}}</span> {{.Answer}}</span>
 </a>
 {{end}}
+</div>
+</section>
+
+<section aria-labelledby="open-h">
+<h2 id="open-h" class="eyebrow">Not resolved yet</h2>
+<div class="cards">
+<div class="card open">
+<span class="principle">I should know how my machines are without logging in.</span>
+<span class="muted-small">Pending reboots and failed services stay hidden until I look. The usual fix is a monitoring platform bigger than the machines.</span>
+</div>
+<div class="card open">
+<span class="principle">Logs are text, and I should grep them wherever they are.</span>
+<span class="muted-small">They're stranded on each server, or shipped to a search cluster with its own query language. journald already stores them well.</span>
+</div>
 </div>
 </section>
 
@@ -28,12 +41,5 @@
 </div>
 </section>
 
-<section id="how" aria-labelledby="how-h">
-<h2 id="how-h" class="eyebrow">How they fit</h2>
-<div class="panel flow">
-<p><a class="chip" href="/tools/smed">smed</a> prepares <span class="chip chip-ghost">a server</span> that <a class="chip" href="/tools/unit">unit</a> deploys to</p>
-<p><a class="chip chip-accent" href="/tools/punchcard">punchcard</a> builds all four, itself included</p>
-<p><a class="chip" href="/tools/molt">molt</a> turns punchcard's build history into tested tables</p>
-</div>
-</section>
+<p class="muted">This site runs on them: <a href="/tools/smed">smed</a> configured the server, <a href="/tools/punchcard">punchcard</a> builds every push, and <a href="/tools/unit">unit</a> deploys it.</p>
 {{end}}

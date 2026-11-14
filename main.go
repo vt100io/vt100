@@ -54,7 +54,7 @@ func page(name string) *template.Template {
 }
 
 func newSite() http.Handler {
-	home, tool, principles, notFound := page("home"), page("tool"), page("principles"), page("notfound")
+	home, tool, notFound := page("home"), page("tool"), page("notfound")
 	guidePages := map[string]*template.Template{}
 	for _, g := range guides {
 		guidePages[g.Slug] = page("guide-" + g.Slug)
@@ -70,7 +70,7 @@ func newSite() http.Handler {
 		render(w, home, http.StatusOK, map[string]any{"Tools": tools, "Guides": guides})
 	})
 	mux.HandleFunc("GET /principles", func(w http.ResponseWriter, r *http.Request) {
-		render(w, principles, http.StatusOK, map[string]any{"Title": "Principles"})
+		http.Redirect(w, r, "/", http.StatusMovedPermanently) // merged into the front page
 	})
 	mux.HandleFunc("GET /tools/{name}", func(w http.ResponseWriter, r *http.Request) {
 		t, ok := toolByName(r.PathValue("name"))

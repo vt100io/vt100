@@ -99,11 +99,5 @@ main { display: flex; flex-direction: column; gap: 64px; }
 .guide pre { margin: 0; background: var(--night-1); border: 1px solid var(--night-2); border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 14px; line-height: 1.6; }
 .guide pre code { font-size: inherit; }
 
-.principles { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
-.principle { display: flex; flex-direction: column; gap: 12px; font-size: 16px; line-height: 1.7; }
-.principle h2 { margin: 0; font-size: 21px; font-weight: 600; line-height: 1.4; }
-.principle p { margin: 0; }
-.principle strong { color: var(--snow); font-weight: 600; }
-.principle .chip { margin-right: 6px; }
-.principle.open { background: var(--night); border-style: dashed; border-color: var(--night-3); }
-.principle.open strong { color: var(--yellow); }
+.principle { color: var(--snow); font-size: 19px; font-weight: 600; line-height: 1.4; }
+.card.open { background: var(--night); border-style: dashed; border-color: var(--night-3); }

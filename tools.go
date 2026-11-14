@@ -8,15 +8,20 @@ const githubOwner = "vt100io"
 // Tool is one tool on the site. Fields of type template.HTML are written
 // here, by me, and may contain markup such as <code>.
 type Tool struct {
-	Name    string
-	Tagline template.HTML
-	LeansOn []string
-	Install string // the command that gets it
-	Demo    string // path under /static, optional
-	DemoAlt string
-	Why     []template.HTML
-	Not     []Not
-	Steps   []template.HTML
+	Name string
+	// The principle the tool answers, what breaks it, and how the tool
+	// fixes it. They make up the tool's card on the front page.
+	Principle string
+	Broken    string
+	Answer    template.HTML
+	Tagline   template.HTML
+	LeansOn   []string
+	Install   string // the command that gets it
+	Demo      string // path under /static, optional
+	DemoAlt   string
+	Why       []template.HTML
+	Not       []Not
+	Steps     []template.HTML
 }
 
 // Not is something a tool deliberately isn't.
@@ -26,12 +31,15 @@ func (t Tool) Repo() string { return "https://github.com/" + githubOwner + "/" +
 
 var tools = []Tool{
 	{
-		Name:    "punchcard",
-		Tagline: `A one-binary CI server that runs the same <code>mise run ci</code> you run on your laptop, on a machine that remembers.`,
-		LeansOn: []string{"mise", "GitHub App"},
-		Install: "go install github.com/" + githubOwner + "/punchcard@latest",
-		Demo:    "/static/img/punchcard-tui.gif",
-		DemoAlt: "punchcard tui: a build arrives and streams its log, a newer push replaces a queued one, and a failed build is opened",
+		Name:      "punchcard",
+		Principle: "A build is a command I can run myself.",
+		Broken:    "Hosted CI is a remote machine running its own YAML, starting cold every time.",
+		Answer:    `runs the repo's <code>mise run ci</code> on a machine that remembers.`,
+		Tagline:   `A one-binary CI server that runs the same <code>mise run ci</code> you run on your laptop, on a machine that remembers.`,
+		LeansOn:   []string{"mise", "GitHub App"},
+		Install:   "go install github.com/" + githubOwner + "/punchcard@latest",
+		Demo:      "/static/img/punchcard-tui.gif",
+		DemoAlt:   "punchcard tui: a build arrives and streams its log, a newer push replaces a queued one, and a failed build is opened",
 		Why: []template.HTML{
 			`Hosted CI runners start from nothing on every build: a fresh machine, fresh tool installs, cold caches. Punchcard keeps a workspace per repo on a machine I own. When I push, it fetches, resets to the exact commit and runs the repo's <code>ci</code> task.`,
 			`There is no CI language. The pipeline is a mise task in the repo, so if it passes on my laptop it passes in CI, and a CI failure can be debugged on my own machine.`,
@@ -50,10 +58,13 @@ var tools = []Tool{
 		},
 	},
 	{
-		Name:    "unit",
-		Tagline: `Deploys statically compiled binaries as hardened systemd units over SSH. No containers, no daemons, just PID 1.`,
-		LeansOn: []string{"systemd", "SSH"},
-		Install: "go install github.com/" + githubOwner + "/unit/cmd/unit@latest",
+		Name:      "unit",
+		Principle: "Nothing between the program and the machine.",
+		Broken:    "A static binary gets an image, a registry and a daemon, while systemd is already on every server.",
+		Answer:    `deploys binaries as hardened systemd units over SSH.`,
+		Tagline:   `Deploys statically compiled binaries as hardened systemd units over SSH. No containers, no daemons, just PID 1.`,
+		LeansOn:   []string{"systemd", "SSH"},
+		Install:   "go install github.com/" + githubOwner + "/unit/cmd/unit@latest",
 		Why: []template.HTML{
 			`A statically compiled binary runs on any Linux host as-is. A container adds a daemon to manage, a registry to push to and a base image to pull, and buys nothing for a binary that has no runtime dependencies.`,
 			`systemd already runs as PID 1 on every Linux server, with the isolation, secrets, resource limits, socket activation and timers you'd want. The gap is ergonomics: a hardened unit is 40+ lines before anything is specific to your app. unit takes a short description of what the app needs and writes the units correctly every time.`,
@@ -64,10 +75,13 @@ var tools = []Tool{
 		},
 	},
 	{
-		Name:    "smed",
-		Tagline: `Configures machines from plain Go: it reads each machine, shows a plan, then applies it. No interpreter on the target, no state file anywhere.`,
-		LeansOn: []string{"Tailscale", "SSH"},
-		Install: "go get github.com/" + githubOwner + "/smed",
+		Name:      "smed",
+		Principle: "Look at the real thing before you change it.",
+		Broken:    "Configuration tools act without a plan, or plan against a state file that drifted.",
+		Answer:    `reads each machine, shows the diff, then applies it.`,
+		Tagline:   `Configures machines from plain Go: it reads each machine, shows a plan, then applies it. No interpreter on the target, no state file anywhere.`,
+		LeansOn:   []string{"Tailscale", "SSH"},
+		Install:   "go get github.com/" + githubOwner + "/smed",
 		Why: []template.HTML{
 			`Ansible looks at a machine before it acts, but shows no plan. Terraform shows a plan, but against a state file instead of the world, and the state file drifts. smed reads the world and plans against it: go look, compute a diff, show it, then apply it concurrently per host.`,
 			`It is a Go library, not a YAML file or a DSL standing in for a real language. Configuration is a Go program that imports smed, and <code>go run .</code> is the dispatcher. Tailscale is the default way to find and reach machines.`,
@@ -78,10 +92,13 @@ var tools = []Tool{
 		},
 	},
 	{
-		Name:    "molt",
-		Tagline: `Builds a folder of plain SQL into a DuckDB database: in dependency order, with tests, in one transaction.`,
-		LeansOn: []string{"DuckDB"},
-		Install: "go install github.com/" + githubOwner + "/molt/cmd/molt@latest",
+		Name:      "molt",
+		Principle: "Nobody should read half a truth.",
+		Broken:    "Pipelines publish tables one at a time and test them afterwards.",
+		Answer:    `builds plain SQL into DuckDB in one transaction, tests included.`,
+		Tagline:   `Builds a folder of plain SQL into a DuckDB database: in dependency order, with tests, in one transaction.`,
+		LeansOn:   []string{"DuckDB"},
+		Install:   "go install github.com/" + githubOwner + "/molt/cmd/molt@latest",
 		Why: []template.HTML{
 			`DuckDB made analytics simple: one engine, one file, no server. The tools around it put a layer between you and the engine. molt removes the layer: it assumes DuckDB and nothing else, and lets DuckDB do every job it can already do.`,
 			`Every run is one transaction. A failing model or test rolls everything back, so readers never see half a rebuild or data that failed its tests.`,
