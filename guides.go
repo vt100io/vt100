@@ -12,6 +12,6 @@ var guides = []Guide{
 	{
 		Slug:    "tailscale",
 		Title:   "Tailscale for the vt100 stack",
-		Summary: "A personal tailnet, the policy file, Funnel for webhooks, and servers that join on first boot.",
+		Summary: "A personal tailnet, the policy file, servers that join on first boot, and Funnel for testing on a laptop.",
 	},
 }

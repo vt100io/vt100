@@ -43,12 +43,10 @@ var tools = []Tool{
 			{"A platform.", "No agents, runners, plugins or marketplace."},
 		},
 		Steps: []template.HTML{
-			`Install the binary with <code>go install</code>.`,
 			`Create a GitHub App: contents read, commit statuses write, push and pull request events.`,
-			`Start it with the webhook secret and the App's key: <code>punchcard</code>.`,
-			`Make it reachable: <code>tailscale funnel --bg 8081</code> on a laptop, or <code>unit deploy</code> on a server.`,
+			`Deploy it to a server with <code>unit deploy</code> and a <code>domain</code> in its <code>unit.toml</code>. Caddy gets the certificate, and <code>https://&lt;domain&gt;/</code> is the App's webhook URL. To try it on a laptop first, run <code>punchcard</code> and publish it with <code>tailscale funnel --bg 8081</code>.`,
 			`Add <code>[tasks.ci]</code> to a repo's mise.toml and push.`,
-			`Watch it: <code>punchcard tui</code>.`,
+			`Watch it: <code>punchcard tui</code> on the machine it runs on.`,
 		},
 	},
 	{

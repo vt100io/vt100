@@ -7,7 +7,7 @@
 </section>
 
 <article class="prose guide">
-<p>Every tool here leans on Tailscale in some way. smed finds and reaches machines through it, unit deploys over it, and Punchcard receives GitHub's webhooks through Tailscale Funnel while it runs on my laptop. This is how I set it up, including the parts that tripped me up.</p>
+<p>Every tool here leans on Tailscale in some way. smed finds and reaches machines through it, unit deploys over it, and the server reaches nothing of mine except over it. The only things public are the websites, on ports 80 and 443. This is how I set it up, including the parts that tripped me up.</p>
 
 <h2 id="account">1. A personal tailnet</h2>
 <p>Sign up at <a href="https://login.tailscale.com/start">login.tailscale.com</a>. The free personal plan allows 3 users and 100 devices, which is far more than this needs. I sign in with GitHub, so Tailscale calls me <code>stianh@github</code>.</p>
@@ -77,13 +77,14 @@ tailscale switch &lt;name&gt;        # the name or ID the list shows</code></pre
 <li><strong>No email addresses.</strong> <code>autogroup:admin</code> and <code>autogroup:member</code> mean me, whichever account I signed up with. If you'd rather see your name, write <code>"you@github"</code> instead; it's the same while you're the only user.</li>
 </ul>
 
-<h2 id="funnel">6. Funnel, for GitHub's webhooks</h2>
-<p>While Punchcard runs on my laptop, GitHub reaches it through Funnel, which publishes one local port at a public HTTPS address:</p>
+<h2 id="funnel">6. Funnel, for trying things on a laptop</h2>
+<p>On the server, GitHub reaches Punchcard the ordinary way: a DNS name, Caddy and a Let's Encrypt certificate, all set up by smed and unit. Tailscale isn't involved.</p>
+<p>Before a server exists, or while I work on Punchcard itself, I run it on my laptop and let GitHub in through Funnel, which publishes one local port at a public HTTPS address:</p>
 <pre><code>tailscale funnel --bg 8081               # stays on across reboots
 tailscale funnel status
 tailscale funnel --https=443 off         # turn it off</code></pre>
-<p>It prints the public address, like <code>https://laptop.tail1234.ts.net/</code>. That's the webhook URL for the GitHub App. Funnel needs both the <code>funnel</code> attribute in the policy and HTTPS certificates; without them it fails or waits.</p>
-<p>A sleeping laptop misses webhooks, and GitHub doesn't retry them. Redeliver missed ones from the App's settings under Advanced, or push again. The real fix is a server.</p>
+<p>It prints the public address, like <code>https://laptop.tail1234.ts.net/</code>. Set that as the GitHub App's webhook URL while testing, and set it back to the server's address afterwards. Funnel needs both the <code>funnel</code> attribute in the policy and HTTPS certificates; without them it fails or waits.</p>
+<p>A sleeping laptop misses webhooks, and GitHub doesn't retry them. Redeliver missed ones from the App's settings under Advanced, or push again. That's fine for testing and the reason Punchcard lives on a server.</p>
 
 <h2 id="servers">7. Servers join on first boot</h2>
 <p>A new server joins the tailnet the first time it starts, with an auth key from <strong>Settings › Keys</strong>:</p>
@@ -98,6 +99,7 @@ tailscale funnel --https=443 off         # turn it off</code></pre>
 <h2 id="tripped">What tripped me up</h2>
 <ul>
 <li>A fresh policy file without <code>nodeAttrs</code> silently blocks Funnel.</li>
+<li>Funnel left on after moving to a server keeps a laptop port public. Turn it off with <code>tailscale funnel --https=443 off</code>.</li>
 <li><code>tailscale login</code> switches to the new account right away. Anything published with Funnel on the old account stops until you switch back.</li>
 <li><code>sudo</code> can't ask for a password from a tool that runs commands for you without a terminal. Run it yourself.</li>
 <li>The <code>check</code> SSH mode on my work tailnet made every login wait for a browser. Fine for me, impossible for a deploy.</li>
