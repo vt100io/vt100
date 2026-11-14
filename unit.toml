@@ -1,0 +1,11 @@
+# Deployed with unit (github.com/vt100io/unit): mise run build, then unit deploy.
+name       = "vt100"
+executable = "bin/vt100"
+port       = 8080 # systemd holds the socket and hands it to the site
+
+[server]
+host = "vt100" # over Tailscale
+user = "deploy"
+
+[resources]
+memory_max = "128M"

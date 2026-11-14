@@ -1,0 +1,33 @@
+{{define "layout" -}}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{with .}}{{with .Title}}{{.}} · {{end}}{{end}}vt100</title>
+<meta name="description" content="Calm architecture, and the small tools I use to run my hobby projects calmly.">
+<link rel="preload" href="/static/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/site.css">
+</head>
+<body>
+<div class="page">
+<header class="top">
+<a class="wordmark" href="/">vt100</a>
+<nav aria-label="Main">
+<a href="/#tools">Tools</a>
+<a href="/#guides">Guides</a>
+<a href="/#how">How they fit</a>
+<a href="https://github.com/{{githubOwner}}">GitHub</a>
+</nav>
+</header>
+<main>
+{{template "content" .}}
+</main>
+<footer class="bottom">
+<span>vt100 · one maintainer, four tools</span>
+<span>MIT · built with punchcard, deployed with unit</span>
+</footer>
+</div>
+</body>
+</html>
+{{- end}}

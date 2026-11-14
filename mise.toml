@@ -1,0 +1,24 @@
+[tools]
+go = "1.27.4"
+
+[tasks.check]
+description = "Check for known vulnerabilities"
+# go run builds govulncheck with this repo's Go, not a shared older one.
+run = "go run golang.org/x/vuln/cmd/govulncheck@latest ./..."
+
+[tasks.test]
+description = "Run the tests"
+run = "go test ./..."
+
+[tasks.build]
+description = "Build the site into one binary"
+run = "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/vt100 ."
+
+[tasks.ci]
+description = "What Punchcard runs on push and PR"
+depends = ["check", "test", "build"]
+run = "go vet ./..."
+
+[tasks.dev]
+description = "Run the site on http://localhost:8080"
+run = "go run ."

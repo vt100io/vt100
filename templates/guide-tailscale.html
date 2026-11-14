@@ -1,0 +1,106 @@
+{{define "content"}}
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">vt100</a> / <a href="/#guides">Guides</a> / <span aria-current="page">Tailscale</span></nav>
+
+<section class="hero">
+<h1>Tailscale for the vt100 stack</h1>
+<p class="lead">One private network for my laptop, my servers and my CI. SSH without keys, and servers that only show the internet ports 80 and 443.</p>
+</section>
+
+<article class="prose guide">
+<p>Every tool here leans on Tailscale in some way. smed finds and reaches machines through it, unit deploys over it, and Punchcard receives GitHub's webhooks through Tailscale Funnel while it runs on my laptop. This is how I set it up, including the parts that tripped me up.</p>
+
+<h2 id="account">1. A personal tailnet</h2>
+<p>Sign up at <a href="https://login.tailscale.com/start">login.tailscale.com</a>. The free personal plan allows 3 users and 100 devices, which is far more than this needs. I sign in with GitHub, so Tailscale calls me <code>stianh@github</code>.</p>
+<p>If you already use Tailscale at work, make a separate tailnet anyway. Work policies (like approving every SSH login in a browser) get in the way of unattended deploys, and your hobby machines don't belong in your employer's network.</p>
+
+<h2 id="laptop">2. The laptop</h2>
+<p>Install Tailscale, then log in:</p>
+<pre><code>tailscale login</code></pre>
+<p>On Linux, let your own user run <code>tailscale</code> without <code>sudo</code>. You only need to do this once per account:</p>
+<pre><code>sudo tailscale set --operator=$USER</code></pre>
+<p>Run it in a real terminal: <code>sudo</code> needs somewhere to ask for your password.</p>
+
+<h2 id="switching">3. Switching between work and personal</h2>
+<p>Tailscale keeps several accounts on one machine. <code>tailscale login</code> adds a new one next to the old one and switches to it. After that:</p>
+<pre><code>tailscale switch --list        # * marks the active account
+tailscale switch &lt;name&gt;        # the name or ID the list shows</code></pre>
+<p>Only one tailnet is active at a time, and open connections drop when you switch. Funnel and serve settings belong to each account, so something you publish on one account is gone while the other one is active, and comes back when you switch back.</p>
+
+<h2 id="dns">4. Admin console: DNS</h2>
+<p>Under <strong>DNS</strong> in the <a href="https://login.tailscale.com/admin">admin console</a>, turn on:</p>
+<ul>
+<li><strong>MagicDNS</strong>, so machines are reachable by name (<code>ssh vt100</code>) instead of by address.</li>
+<li><strong>HTTPS Certificates</strong>, so machines can get real certificates for names like <code>laptop.tail1234.ts.net</code>. Funnel needs this, and so does <code>tailscale serve</code>.</li>
+</ul>
+<p>Certificates are recorded in public Certificate Transparency logs, so every machine that gets one has its name published. Don't give machines names you'd mind being public.</p>
+
+<h2 id="policy">5. The policy file</h2>
+<p>Under <strong>Access controls</strong>, replace the default policy with this one. It uses two tags: <code>tag:vt100</code> for servers that run vt100 things, and <code>tag:ci</code> for the machine that runs Punchcard. One server can carry both.</p>
+<pre><code>{
+  // Who may put which tag on a machine. Only me.
+  "tagOwners": {
+    "tag:vt100": ["autogroup:admin"],
+    "tag:ci":    ["autogroup:admin"],
+  },
+
+  // Network access.
+  "grants": [
+    // My own devices reach everything.
+    {"src": ["autogroup:member"], "dst": ["*"], "ip": ["*"]},
+    // Punchcard reaches the servers it deploys to, over SSH only.
+    {"src": ["tag:ci"], "dst": ["tag:vt100"], "ip": ["tcp:22"]},
+  ],
+
+  // Tailscale SSH: no authorized_keys anywhere.
+  "ssh": [
+    {"action": "accept", "src": ["autogroup:member"], "dst": ["autogroup:self"], "users": ["autogroup:nonroot", "root"]},
+    {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:vt100"], "users": ["root", "deploy"]},
+    {"action": "accept", "src": ["tag:ci"], "dst": ["tag:vt100"], "users": ["deploy"]},
+  ],
+
+  // My own devices may publish a port to the internet with Funnel.
+  "nodeAttrs": [
+    {"target": ["autogroup:member"], "attr": ["funnel"]},
+  ],
+
+  // Checked on save: the policy is rejected if this doesn't hold.
+  "sshTests": [
+    {"src": "tag:ci", "dst": ["tag:vt100"], "accept": ["deploy"], "deny": ["root"]},
+  ],
+}</code></pre>
+<p>What it means:</p>
+<ul>
+<li><strong>My devices</strong> reach everything, and can log in to the servers as <code>root</code> or <code>deploy</code>.</li>
+<li><strong>The CI machine</strong> can reach the servers only on SSH, and only as <code>deploy</code>. That's enough for <code>unit deploy</code>, and a build that goes wrong can't become root on a server.</li>
+<li><strong>The servers</strong> can't start connections to my devices. No rule lets them, so a compromised server can't reach my laptop.</li>
+<li><strong>SSH rules use <code>accept</code>, not <code>check</code>.</strong> <code>check</code> asks a human to approve each login in a browser. That's good for people on sensitive machines, but it blocks deploys that run on their own.</li>
+<li><strong>No email addresses.</strong> <code>autogroup:admin</code> and <code>autogroup:member</code> mean me, whichever account I signed up with. If you'd rather see your name, write <code>"you@github"</code> instead; it's the same while you're the only user.</li>
+</ul>
+
+<h2 id="funnel">6. Funnel, for GitHub's webhooks</h2>
+<p>While Punchcard runs on my laptop, GitHub reaches it through Funnel, which publishes one local port at a public HTTPS address:</p>
+<pre><code>tailscale funnel --bg 8081               # stays on across reboots
+tailscale funnel status
+tailscale funnel --https=443 off         # turn it off</code></pre>
+<p>It prints the public address, like <code>https://laptop.tail1234.ts.net/</code>. That's the webhook URL for the GitHub App. Funnel needs both the <code>funnel</code> attribute in the policy and HTTPS certificates; without them it fails or waits.</p>
+<p>A sleeping laptop misses webhooks, and GitHub doesn't retry them. Redeliver missed ones from the App's settings under Advanced, or push again. The real fix is a server.</p>
+
+<h2 id="servers">7. Servers join on first boot</h2>
+<p>A new server joins the tailnet the first time it starts, with an auth key from <strong>Settings › Keys</strong>:</p>
+<ul>
+<li><strong>Pre-approved</strong>, so it doesn't wait for me to approve it.</li>
+<li><strong>Tags:</strong> <code>tag:vt100</code>, plus <code>tag:ci</code> for the machine that runs Punchcard.</li>
+<li><strong>Not ephemeral</strong>, so it stays in the tailnet after a restart.</li>
+<li><strong>Single use, with a short expiry.</strong> The key ends up in the server's first-boot data, which can be read from inside the server afterwards. A used, expired key is worthless.</li>
+</ul>
+<p>The server runs <code>tailscale up --ssh</code> with the key and tags. From then on, I reach it with plain <code>ssh deploy@vt100</code>. Its public firewall only opens 80 and 443; SSH never faces the internet.</p>
+
+<h2 id="tripped">What tripped me up</h2>
+<ul>
+<li>A fresh policy file without <code>nodeAttrs</code> silently blocks Funnel.</li>
+<li><code>tailscale login</code> switches to the new account right away. Anything published with Funnel on the old account stops until you switch back.</li>
+<li><code>sudo</code> can't ask for a password from a tool that runs commands for you without a terminal. Run it yourself.</li>
+<li>The <code>check</code> SSH mode on my work tailnet made every login wait for a browser. Fine for me, impossible for a deploy.</li>
+</ul>
+</article>
+{{end}}

@@ -1,0 +1,47 @@
+{{define "content"}}
+{{with .Tool}}
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">vt100</a> / <a href="/#tools">Tools</a> / <span aria-current="page">{{.Name}}</span></nav>
+
+<section class="hero">
+<h1 class="tool-name">{{.Name}}</h1>
+<p class="lead">{{.Tagline}}</p>
+<div class="install">
+<code class="command"><span class="prompt" aria-hidden="true">$ </span>{{.Install}}</code>
+<a href="{{.Repo}}">View on GitHub →</a>
+</div>
+</section>
+
+{{with .Demo}}
+<figure class="demo">
+<img src="{{.}}" alt="{{$.Tool.DemoAlt}}" width="1400" height="600">
+</figure>
+{{end}}
+
+<section class="split">
+<div class="prose">
+<h2>Why</h2>
+{{range .Why}}<p>{{.}}</p>
+{{end}}
+</div>
+{{with .Not}}
+<aside class="panel not">
+<h2>Deliberately not</h2>
+{{range .}}<p><strong>{{.Title}}</strong> {{.Text}}</p>
+{{end}}
+</aside>
+{{end}}
+</section>
+
+{{with .Steps}}
+<section class="prose">
+<h2>Getting started</h2>
+<ol>
+{{range .}}<li>{{.}}</li>
+{{end}}
+</ol>
+</section>
+{{end}}
+
+<p class="muted">Leans on {{range $i, $l := .LeansOn}}{{if $i}}, {{end}}{{$l}}{{end}}.</p>
+{{end}}
+{{end}}
