@@ -47,7 +47,7 @@ var tools = []Tool{
 			`A GitHub App posts the checks. A repo opts in by having a <code>ci</code> task; there is no list of repos to keep.`,
 		},
 		Not: []Not{
-			{"A sandbox.", "Anyone who can open a PR runs code on the machine."},
+			{"A sandbox.", "Anyone with write access runs code on the machine. Strangers' pull requests are ignored."},
 			{"Parallel.", "One build at a time keeps workspaces safe."},
 			{"A platform.", "No agents, runners, plugins or marketplace."},
 		},
