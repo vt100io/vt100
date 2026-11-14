@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"io"
 	"net"
 	"net/http"
@@ -67,11 +68,14 @@ func TestPrinciples(t *testing.T) {
 	}
 	_, home := get(t, "/")
 	for _, tool := range tools {
-		if tool.Principle == "" || tool.Broken == "" || tool.Answer == "" {
-			t.Errorf("%s has no principle", tool.Name)
+		if tool.Question == "" || tool.Answer == "" || tool.Principle == "" {
+			t.Errorf("%s lacks its question, answer or principle", tool.Name)
 		}
-		if !strings.Contains(home, tool.Principle) {
-			t.Errorf("front page lacks %s's principle", tool.Name)
+		if !strings.Contains(home, template.HTMLEscapeString(tool.Question)) {
+			t.Errorf("front page lacks %s's question", tool.Name)
+		}
+		if _, page := get(t, "/tools/"+tool.Name); !strings.Contains(page, template.HTMLEscapeString(tool.Principle)) {
+			t.Errorf("%s's page lacks its principle", tool.Name)
 		}
 	}
 }

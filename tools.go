@@ -9,11 +9,12 @@ const githubOwner = "vt100io"
 // here, by me, and may contain markup such as <code>.
 type Tool struct {
 	Name string
-	// The principle the tool answers, what breaks it, and how the tool
-	// fixes it. They make up the tool's card on the front page.
-	Principle string
-	Broken    string
+	// The question the tool started from and its answer make up its card
+	// on the front page. The principle behind them is on the tool's page.
+	Question  string
 	Answer    template.HTML
+	Principle string
+	Early     bool // not there yet
 	Tagline   template.HTML
 	LeansOn   []string
 	Install   string // the command that gets it
@@ -32,9 +33,9 @@ func (t Tool) Repo() string { return "https://github.com/" + githubOwner + "/" +
 var tools = []Tool{
 	{
 		Name:      "punchcard",
-		Principle: "A build is a command I can run myself.",
-		Broken:    "Hosted CI is a remote machine running its own YAML, starting cold every time.",
+		Question:  "Why does CI need its own build language I can't run on my laptop, and two minutes to deploy an index.html?",
 		Answer:    `runs the repo's <code>mise run ci</code> on a machine that remembers.`,
+		Principle: "A build is a command I can run myself.",
 		Tagline:   `A one-binary CI server that runs the same <code>mise run ci</code> you run on your laptop, on a machine that remembers.`,
 		LeansOn:   []string{"mise", "GitHub App"},
 		Install:   "go install github.com/" + githubOwner + "/punchcard@latest",
@@ -59,9 +60,9 @@ var tools = []Tool{
 	},
 	{
 		Name:      "unit",
-		Principle: "Nothing between the program and the machine.",
-		Broken:    "A static binary gets an image, a registry and a daemon, while systemd is already on every server.",
+		Question:  "Why do I put a statically compiled binary into a container?",
 		Answer:    `deploys binaries as hardened systemd units over SSH.`,
+		Principle: "Nothing between the program and the machine.",
 		Tagline:   `Deploys statically compiled binaries as hardened systemd units over SSH. No containers, no daemons, just PID 1.`,
 		LeansOn:   []string{"systemd", "SSH"},
 		Install:   "go install github.com/" + githubOwner + "/unit/cmd/unit@latest",
@@ -76,9 +77,9 @@ var tools = []Tool{
 	},
 	{
 		Name:      "smed",
+		Question:  "Why do I keep an inventory and tags when Tailscale already has both?",
+		Answer:    `finds machines in the tailnet, shows the diff, then applies it.`,
 		Principle: "Look at the real thing before you change it.",
-		Broken:    "Configuration tools act without a plan, or plan against a state file that drifted.",
-		Answer:    `reads each machine, shows the diff, then applies it.`,
 		Tagline:   `Configures machines from plain Go: it reads each machine, shows a plan, then applies it. No interpreter on the target, no state file anywhere.`,
 		LeansOn:   []string{"Tailscale", "SSH"},
 		Install:   "go get github.com/" + githubOwner + "/smed",
@@ -93,9 +94,10 @@ var tools = []Tool{
 	},
 	{
 		Name:      "molt",
-		Principle: "Nobody should read half a truth.",
-		Broken:    "Pipelines publish tables one at a time and test them afterwards.",
-		Answer:    `builds plain SQL into DuckDB in one transaction, tests included.`,
+		Question:  "Why is column-level lineage behind a paywall, in a tool built to support every database there is?",
+		Answer:    `builds plain SQL into DuckDB, and only DuckDB. Column lineage is next.`,
+		Principle: "Knowing where a column comes from shouldn't cost extra.",
+		Early:     true,
 		Tagline:   `Builds a folder of plain SQL into a DuckDB database: in dependency order, with tests, in one transaction.`,
 		LeansOn:   []string{"DuckDB"},
 		Install:   "go install github.com/" + githubOwner + "/molt/cmd/molt@latest",

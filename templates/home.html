@@ -1,18 +1,16 @@
 {{define "content"}}
 <section class="hero">
 <h1>Calm architecture.</h1>
-<p class="lead">Small tools I run my hobby projects with. Each one exists because something I believe in kept getting broken.</p>
-<p class="muted">The idea is Bret Victor's, from <a href="https://vimeo.com/36579366">Inventing on Principle</a>: hold a principle, notice where the world breaks it, and build the thing that fixes it.</p>
+<p class="lead">Small tools I run my hobby projects with. It started with questions, and each tool here is my answer to one.</p>
 </section>
 
 <section id="tools" aria-labelledby="tools-h">
-<h2 id="tools-h" class="eyebrow">Principles, and the tool for each</h2>
+<h2 id="tools-h" class="eyebrow">Questions, and the tool for each</h2>
 <div class="cards">
 {{range .Tools}}
 <a class="card" href="/tools/{{.Name}}">
-<span class="principle">{{.Principle}}</span>
-<span class="muted-small">{{.Broken}}</span>
-<span><span class="card-name">{{.Name}}</span> {{.Answer}}</span>
+<span class="question">{{.Question}}</span>
+<span><span class="card-name">{{.Name}}</span> {{.Answer}}{{if .Early}} <span class="tag">early</span>{{end}}</span>
 </a>
 {{end}}
 </div>
@@ -21,14 +19,8 @@
 <section aria-labelledby="open-h">
 <h2 id="open-h" class="eyebrow">Not resolved yet</h2>
 <div class="cards">
-<div class="card open">
-<span class="principle">I should know how my machines are without logging in.</span>
-<span class="muted-small">Pending reboots and failed services stay hidden until I look. The usual fix is a monitoring platform bigger than the machines.</span>
-</div>
-<div class="card open">
-<span class="principle">Logs are text, and I should grep them wherever they are.</span>
-<span class="muted-small">They're stranded on each server, or shipped to a search cluster with its own query language. journald already stores them well.</span>
-</div>
+<div class="card open"><span class="question">Why do I have to log in to find out a server needs a reboot?</span></div>
+<div class="card open"><span class="question">Why can't I grep the logs of all my servers at once?</span></div>
 </div>
 </section>
 
