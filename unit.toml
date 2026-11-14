@@ -2,6 +2,9 @@
 name       = "vt100"
 executable = "bin/vt100"
 port       = 8080 # systemd holds the socket and hands it to the site
+# Caddy serves both names with Let's Encrypt certificates; the site
+# redirects www to the bare domain itself.
+domain     = "vt100.io, www.vt100.io"
 
 [server]
 host = "vt100" # over Tailscale
