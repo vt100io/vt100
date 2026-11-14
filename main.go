@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -53,7 +54,7 @@ func page(name string) *template.Template {
 }
 
 func newSite() http.Handler {
-	home, tool, notFound := page("home"), page("tool"), page("notfound")
+	home, tool, principles, notFound := page("home"), page("tool"), page("principles"), page("notfound")
 	guidePages := map[string]*template.Template{}
 	for _, g := range guides {
 		guidePages[g.Slug] = page("guide-" + g.Slug)
@@ -67,6 +68,9 @@ func newSite() http.Handler {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", cacheFor(24*time.Hour, http.FileServerFS(static))))
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		render(w, home, http.StatusOK, map[string]any{"Tools": tools, "Guides": guides})
+	})
+	mux.HandleFunc("GET /principles", func(w http.ResponseWriter, r *http.Request) {
+		render(w, principles, http.StatusOK, map[string]any{"Title": "Principles"})
 	})
 	mux.HandleFunc("GET /tools/{name}", func(w http.ResponseWriter, r *http.Request) {
 		t, ok := toolByName(r.PathValue("name"))
@@ -88,7 +92,19 @@ func newSite() http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		render(w, notFound, http.StatusNotFound, nil)
 	})
-	return securityHeaders(mux)
+	return securityHeaders(dropWWW(mux))
+}
+
+// dropWWW sends www.example.com/anything to example.com/anything, so the site
+// has one address. Caddy passes the Host header through unchanged.
+func dropWWW(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if host, ok := strings.CutPrefix(r.Host, "www."); ok {
+			http.Redirect(w, r, "https://"+host+r.URL.RequestURI(), http.StatusMovedPermanently)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // render executes t into a buffer first, so a template error becomes a 500

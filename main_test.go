@@ -60,6 +60,29 @@ func TestGuides(t *testing.T) {
 	}
 }
 
+func TestPrinciples(t *testing.T) {
+	resp, body := get(t, "/principles")
+	if resp.StatusCode != http.StatusOK || !strings.Contains(body, "<title>Principles · vt100</title>") {
+		t.Fatalf("status %d", resp.StatusCode)
+	}
+	// Each tool resolves a principle.
+	for _, tool := range tools {
+		if !strings.Contains(body, `href="/tools/`+tool.Name+`"`) {
+			t.Errorf("principles page has no link to %s", tool.Name)
+		}
+	}
+}
+
+func TestDropsWWW(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/tools/unit?x=1", nil)
+	req.Host = "www.vt100.io"
+	newSite().ServeHTTP(rec, req)
+	if rec.Code != http.StatusMovedPermanently || rec.Header().Get("Location") != "https://vt100.io/tools/unit?x=1" {
+		t.Errorf("got %d to %q", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
 func TestNotFound(t *testing.T) {
 	for _, path := range []string{"/tools/nope", "/guides/nope", "/nope", "/static/nope.css"} {
 		if resp, _ := get(t, path); resp.StatusCode != http.StatusNotFound {
@@ -72,7 +95,7 @@ func TestNotFound(t *testing.T) {
 // but the binary.
 func TestPagesOnlyReferToEmbeddedFiles(t *testing.T) {
 	_, css := get(t, "/static/site.css")
-	pages := []string{"/", "/tools/punchcard"}
+	pages := []string{"/", "/tools/punchcard", "/principles"}
 	var refs []string
 	for _, p := range pages {
 		_, body := get(t, p)
