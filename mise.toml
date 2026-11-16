@@ -12,7 +12,7 @@ run = "go test ./..."
 
 [tasks.build]
 description = "Build the site into one binary"
-run = "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/vt100 ."
+run = "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o bin/vt100 ."
 
 [tasks.ci]
 description = "What Punchcard runs on push and PR"

@@ -6,8 +6,10 @@ port       = 8080 # systemd holds the socket and hands it to the site
 # redirects www to the bare domain itself.
 domain     = "vt100.io, www.vt100.io"
 
-# Deploy only commits that Punchcard has built and passed.
-ci_check   = "punchcard/ci"
+# Deploy only commits that Punchcard has built and passed, and only a binary
+# byte-identical to the one it built.
+ci_check    = "punchcard/ci"
+ci_checksum = "punchcard/sha256"
 
 [server]
 host = "vt100" # over Tailscale
