@@ -102,3 +102,4 @@ main { display: flex; flex-direction: column; gap: 64px; }
 .question { color: var(--snow); font-size: 19px; font-weight: 600; line-height: 1.4; }
 .principle { margin: -8px 0 0; color: var(--muted); font-size: 17px; font-style: italic; }
 .card.open { background: var(--night); border-style: dashed; border-color: var(--night-3); }
+.cards.three .card { flex-basis: 280px; }
