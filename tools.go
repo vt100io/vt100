@@ -94,9 +94,9 @@ var tools = []Tool{
 	},
 	{
 		Name:      "molt",
-		Question:  "Why is column-level lineage behind a paywall, in a tool built to support every database there is?",
+		Question:  "Why does my SQL need a layer around it, when DuckDB already parses, binds and plans it?",
 		Answer:    `builds plain SQL into DuckDB, and knows where every column comes from.`,
-		Principle: "Knowing where a column comes from shouldn't cost extra.",
+		Principle: "Let the engine do the work.",
 		Early:     true,
 		Tagline:   `Builds a folder of plain SQL into a DuckDB database: in dependency order, with tests, in one transaction. It knows where every column comes from, and what a change will touch before it runs.`,
 		LeansOn:   []string{"DuckDB"},

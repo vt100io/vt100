@@ -105,7 +105,7 @@ LINE 5:     c.contry,
 <h2>Where it's going</h2>
 <p>The goal is what a DuckDB project needs from dbt and SQLMesh, with DuckDB doing the hard parts.</p>
 <ul class="roadmap">
-<li><span class="tag">done</span> <strong>Column-level lineage.</strong> From DuckDB's own bound plan, and free, because knowing where a column comes from shouldn't cost extra.</li>
+<li><span class="tag">done</span> <strong>Column-level lineage.</strong> From DuckDB's own bound plan, so every column resolves exactly as the query runs.</li>
 <li><span class="tag">done</span> <strong><code>molt plan</code>.</strong> What changes, column by column, and whether it is breaking for anything downstream, before anything is built.</li>
 <li><span class="tag">next</span> <strong>Incremental models.</strong> Append or merge new rows, with the intervals that were built recorded in the database, in the run's transaction, and a full refresh only when the plan says a change is breaking.</li>
 <li><span class="tag">planned</span> <strong>Unit tests.</strong> A few rows in, the rows you expect out, per model.</li>
