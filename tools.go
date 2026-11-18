@@ -95,19 +95,27 @@ var tools = []Tool{
 	{
 		Name:      "molt",
 		Question:  "Why is column-level lineage behind a paywall, in a tool built to support every database there is?",
-		Answer:    `builds plain SQL into DuckDB, and only DuckDB. Column lineage is next.`,
+		Answer:    `builds plain SQL into DuckDB, and knows where every column comes from.`,
 		Principle: "Knowing where a column comes from shouldn't cost extra.",
 		Early:     true,
-		Tagline:   `Builds a folder of plain SQL into a DuckDB database: in dependency order, with tests, in one transaction.`,
+		Tagline:   `Builds a folder of plain SQL into a DuckDB database: in dependency order, with tests, in one transaction. It knows where every column comes from, and what a change will touch before it runs.`,
 		LeansOn:   []string{"DuckDB"},
 		Install:   "go install github.com/" + githubOwner + "/molt/cmd/molt@latest",
 		Why: []template.HTML{
 			`DuckDB made analytics simple: one engine, one file, no server. The tools around it put a layer between you and the engine. molt removes the layer: it assumes DuckDB and nothing else, and lets DuckDB do every job it can already do.`,
 			`Every run is one transaction. A failing model or test rolls everything back, so readers never see half a rebuild or data that failed its tests.`,
+			`Column lineage comes from DuckDB too. molt asks DuckDB's binder for the plan of each model and follows every column down to the columns it reads, so <code>SELECT *</code>, <code>GROUP BY ALL</code> and macros resolve exactly as they run. There is no SQL parser in molt and no dialect to guess.`,
+			`<code>molt plan</code> compares the project with what is built, column by column: the models you changed, the columns downstream whose data will change, and whether that is breaking. <code>molt run</code> prints the same plan before it builds.`,
 		},
 		Not: []Not{
 			{"Multi-warehouse.", "DuckDB only; that is what keeps it this small."},
 			{"A platform.", "No Python runtime, no server, no metadata database."},
+		},
+		Steps: []template.HTML{
+			`Write one <code>SELECT</code> per model in <code>models/&lt;schema&gt;/&lt;name&gt;.sql</code>, and settings, secrets and macros in <code>init.sql</code>.`,
+			`See what changes: <code>molt plan</code>.`,
+			`Build it: <code>molt run</code>.`,
+			`Trace a column to its sources: <code>molt lineage &lt;model&gt; &lt;column&gt;</code>.`,
 		},
 	},
 }
