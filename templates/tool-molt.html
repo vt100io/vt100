@@ -1,0 +1,119 @@
+{{define "content"}}
+{{with .Tool}}
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">vt100</a> / <a href="/#tools">Tools</a> / <span aria-current="page">{{.Name}}</span></nav>
+
+<section class="hero">
+<p class="eyebrow"><span class="tool-mark">{{.Name}}</span>{{if .Early}} · early{{end}}</p>
+<h1>What if DuckDB is the only engine you need?</h1>
+<p class="principle">{{.Principle}}</p>
+<p class="lead">DuckDB showed that a lot of analytics fits in one process on one machine. molt asks what a SQL project needs around it when DuckDB is the whole stack: it builds a folder of plain SQL into a DuckDB database, in dependency order, with tests, in one transaction, and knows where every column comes from and what a change will touch before it runs.</p>
+<div class="install">
+<code class="command"><span class="prompt" aria-hidden="true">$ </span>{{.Install}}</code>
+<a href="{{.Repo}}">View on GitHub →</a>
+</div>
+</section>
+
+<section class="prose">
+<h2>Standing on dbt and SQLMesh</h2>
+<p>dbt made it normal to treat SQL as software: models as <code>SELECT</code>s in version control, tests as queries, a dependency graph instead of a pile of scripts. SQLMesh added plans, column-level lineage and a clear answer to whether a change is breaking. molt borrows all of those ideas.</p>
+<p>Both are built for a harder problem than molt's: the same project on Snowflake, BigQuery, Postgres, DuckDB and more. Serving every engine takes a layer of its own: a project config and profiles, templating or macros, a SQL parser that understands each dialect. That layer is what makes them portable, and it is good engineering.</p>
+<p>molt makes the opposite trade. It supports one engine, so it can let that engine do the work. It owns only what DuckDB can't know by itself, which files exist and the order to run them in, and asks DuckDB for everything else.</p>
+</section>
+
+<div class="compare-wrap">
+<table class="compare">
+<thead>
+<tr><th scope="col">You need</th><th scope="col">A multi-engine tool uses</th><th scope="col">DuckDB already has</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Configuration, secrets</th><td data-label="A multi-engine tool uses">a project config and profiles</td><td data-label="DuckDB already has"><code>SET</code>, <code>CREATE SECRET</code></td></tr>
+<tr><th scope="row">Variables</th><td data-label="A multi-engine tool uses">template variables</td><td data-label="DuckDB already has"><code>SET VARIABLE</code>, <code>getvariable()</code></td></tr>
+<tr><th scope="row">Reusable logic</th><td data-label="A multi-engine tool uses">macros</td><td data-label="DuckDB already has"><code>CREATE MACRO</code></td></tr>
+<tr><th scope="row">Dependencies</th><td data-label="A multi-engine tool uses"><code>ref()</code>, or its own SQL parser</td><td data-label="DuckDB already has">its own parser</td></tr>
+<tr><th scope="row">Validation and lineage</th><td data-label="A multi-engine tool uses">a parser that models each dialect</td><td data-label="DuckDB already has">its own binder and query plan</td></tr>
+<tr><th scope="row">Publishing all at once</th><td data-label="A multi-engine tool uses">per-model builds, or environments swapped with views</td><td data-label="DuckDB already has">transactions</td></tr>
+</tbody>
+</table>
+</div>
+
+<section class="stack">
+<h2 class="section-title">What you get by trusting the engine</h2>
+<div class="cards">
+<div class="card">
+<span class="card-name">All or nothing</span>
+<p>Every run is one transaction: models, tests and bookkeeping together. A failing model or test rolls it all back, so readers never see half a rebuild or data that failed its tests.</p>
+</div>
+<div class="card">
+<span class="card-name">DuckDB is the compiler</span>
+<p><code>molt check</code> binds every model with DuckDB's own binder, against the real schemas of the models upstream, without reading any data. New DuckDB syntax works the day you upgrade.</p>
+</div>
+<div class="card">
+<span class="card-name">Plain SQL in and out</span>
+<p>Models are <code>SELECT</code>s you can paste into any DuckDB client. <code>molt compile</code> prints the whole build as one script that runs without molt. There is nothing to be locked into.</p>
+</div>
+<div class="card">
+<span class="card-name">No state outside the data</span>
+<p>What was built, its columns and their lineage are written to the database itself, in the same transaction as the data, so the two can never disagree. One binary, no Python, no server.</p>
+</div>
+</div>
+</section>
+
+<section class="split">
+<div class="prose">
+<h2>A project is a folder</h2>
+<pre><code>init.sql                         settings, secrets, variables, macros
+models/shop/orders.sql           one SELECT per model → shop.orders
+models/shop/order_items.sql      a view: "-- @kind: view" at the top
+models/shop/customers.sql
+models/shop/customer_revenue.sql
+tests/orders_unique_id.sql       passes when it returns zero rows</code></pre>
+<p>No dependencies to declare and no YAML. A typo is caught by the binder before anything runs, with the line number from the model file:</p>
+<pre><code>$ molt check
+✓ shop.customers (4 columns)
+✓ shop.orders (5 columns)
+✓ shop.order_items (5 columns)
+✗ shop.customer_revenue: Binder Error: Table "c" does not have a column named "contry"
+
+LINE 5:     c.contry,
+            ^^^^^^^^
+1 of 4 models failed to bind</code></pre>
+</div>
+<aside class="panel not">
+<h2>Use dbt or SQLMesh if</h2>
+<p><strong>You run more than DuckDB.</strong> molt is DuckDB only; that is what keeps it this small.</p>
+<p><strong>You want the ecosystem.</strong> Packages, a documentation site, hosted runs, integrations with catalogs and BI tools, and a community that has answered most questions already.</p>
+<p><strong>You need incremental models today.</strong> They are next for molt, and not there yet.</p>
+<p><strong>You need a platform.</strong> Roles, approvals and a hosted catalog belong to one, and molt isn't one. It is a command; cron or a systemd timer runs it.</p>
+</aside>
+</section>
+
+<section class="prose">
+<h2>Know what a change touches</h2>
+<p>molt asks DuckDB for the bound plan of each model and follows every output column down to the columns it reads. Because the plan comes from DuckDB's own binder, <code>SELECT *</code>, <code>GROUP BY ALL</code> and macros resolve exactly as they run, with no dialect to guess. Each column also gets a fingerprint of what it computes, through every model upstream, recorded with the build.</p>
+<p><code>molt plan</code> compares the project with what is built, column by column. Here a change to how <code>quantity</code> is computed reaches one column two models away, and nothing else:</p>
+<pre><code>$ molt plan
+~ shop.order_items                     modified, breaking
+    ~ quantity                 modified
+~ shop.customer_revenue                affected, breaking
+    ~ revenue                  modified ← shop.order_items.quantity
+
+2 models changed, 2 models unchanged</code></pre>
+<p><code>molt run</code> prints the same plan before it builds, and <code>molt lineage &lt;model&gt; &lt;column&gt;</code> traces one column all the way to its sources.</p>
+</section>
+
+<section class="prose">
+<h2>Where it's going</h2>
+<p>The goal is what a DuckDB project needs from dbt and SQLMesh, with DuckDB doing the hard parts.</p>
+<ul class="roadmap">
+<li><span class="tag">done</span> <strong>Column-level lineage.</strong> From DuckDB's own bound plan, and free, because knowing where a column comes from shouldn't cost extra.</li>
+<li><span class="tag">done</span> <strong><code>molt plan</code>.</strong> What changes, column by column, and whether it is breaking for anything downstream, before anything is built.</li>
+<li><span class="tag">next</span> <strong>Incremental models.</strong> Append or merge new rows, with the intervals that were built recorded in the database, in the run's transaction, and a full refresh only when the plan says a change is breaking.</li>
+<li><span class="tag">planned</span> <strong>Unit tests.</strong> A few rows in, the rows you expect out, per model.</li>
+<li><span class="tag">planned</span> <strong>Environments.</strong> Dev and prod in one file, as schemas of views over the same tables. No copies, instant rollback.</li>
+<li><span class="tag">planned</span> <strong>Lineage out.</strong> Export to JSON and OpenLineage, for the catalogs and tools you already use.</li>
+</ul>
+</section>
+
+<p class="muted">Leans on {{range $i, $l := .LeansOn}}{{if $i}}, {{end}}{{$l}}{{end}}.</p>
+{{end}}
+{{end}}

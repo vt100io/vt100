@@ -96,10 +96,37 @@ main { display: flex; flex-direction: column; gap: 64px; }
 .guide { gap: 18px; }
 .guide h2 { margin-top: 20px; }
 .guide ul { margin: 0; padding-left: 24px; display: flex; flex-direction: column; gap: 8px; }
-.guide pre { margin: 0; background: var(--night-1); border: 1px solid var(--night-2); border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 14px; line-height: 1.6; }
-.guide pre code { font-size: inherit; }
+.prose pre { margin: 0; background: var(--night-1); border: 1px solid var(--night-2); border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 14px; line-height: 1.6; }
+.prose pre code { font-size: inherit; }
 
 .question { color: var(--snow); font-size: 19px; font-weight: 600; line-height: 1.4; }
 .principle { margin: -8px 0 0; color: var(--muted); font-size: 17px; font-style: italic; }
 .card.open { background: var(--night); border-style: dashed; border-color: var(--night-3); }
 .cards.three .card { flex-basis: 280px; }
+
+/* Tool pages with their own template: molt. */
+.tool-mark { font-family: var(--mono); font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 16px; color: var(--frost); }
+.hero .eyebrow { margin: 0; }
+.stack { display: flex; flex-direction: column; gap: 20px; }
+.section-title { margin: 0; font-size: 24px; font-weight: 600; }
+.card p { margin: 0; font-size: 15px; line-height: 1.65; }
+.compare-wrap { overflow-x: auto; border: 1px solid var(--night-2); border-radius: 12px; }
+.compare { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--night-1); }
+.compare th, .compare td { text-align: left; padding: 12px 18px; border-bottom: 1px solid var(--night-2); vertical-align: top; }
+.compare tbody tr:last-child > * { border-bottom: 0; }
+.compare thead th { font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.compare tbody th { color: var(--snow); font-weight: 500; white-space: nowrap; }
+.compare td { color: var(--muted); }
+.compare td:last-child { color: var(--snow-1); }
+.roadmap { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.roadmap li { margin: 0; }
+.roadmap .tag { font-family: var(--mono); font-size: 12px; }
+.roadmap strong { color: var(--snow); font-weight: 600; }
+@media (max-width: 640px) {
+    .compare thead { display: none; }
+    .compare tr { display: block; padding: 12px 18px; border-bottom: 1px solid var(--night-2); }
+    .compare tbody tr:last-child { border-bottom: 0; }
+    .compare th, .compare td { display: block; padding: 2px 0; border: 0; }
+    .compare tbody th { white-space: normal; margin-bottom: 4px; }
+    .compare td::before { content: attr(data-label) ": "; color: var(--muted); font-size: 13px; }
+}

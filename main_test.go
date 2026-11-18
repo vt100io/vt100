@@ -80,6 +80,20 @@ func TestPrinciples(t *testing.T) {
 	}
 }
 
+// A tool with its own template gets it instead of the shared tool page.
+func TestToolWithOwnPage(t *testing.T) {
+	resp, page := get(t, "/tools/molt")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status %d", resp.StatusCode)
+	}
+	if !strings.Contains(page, "What if DuckDB is the only engine you need?") {
+		t.Error("/tools/molt is not served from tool-molt.html")
+	}
+	if _, shared := get(t, "/tools/unit"); strings.Contains(shared, "DuckDB already has") {
+		t.Error("/tools/unit got molt's page")
+	}
+}
+
 func TestDropsWWW(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/tools/unit?x=1", nil)
@@ -102,7 +116,7 @@ func TestNotFound(t *testing.T) {
 // but the binary.
 func TestPagesOnlyReferToEmbeddedFiles(t *testing.T) {
 	_, css := get(t, "/static/site.css")
-	pages := []string{"/", "/tools/punchcard"}
+	pages := []string{"/", "/tools/punchcard", "/tools/molt"}
 	var refs []string
 	for _, p := range pages {
 		_, body := get(t, p)

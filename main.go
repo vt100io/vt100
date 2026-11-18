@@ -55,6 +55,14 @@ func page(name string) *template.Template {
 
 func newSite() http.Handler {
 	home, tool, notFound := page("home"), page("tool"), page("notfound")
+	// A tool with more to say than the shared page has its own template,
+	// templates/tool-<name>.html.
+	toolPages := map[string]*template.Template{}
+	for _, t := range tools {
+		if _, err := fs.Stat(templateFS, "templates/tool-"+t.Name+".html"); err == nil {
+			toolPages[t.Name] = page("tool-" + t.Name)
+		}
+	}
 	guidePages := map[string]*template.Template{}
 	for _, g := range guides {
 		guidePages[g.Slug] = page("guide-" + g.Slug)
@@ -78,7 +86,11 @@ func newSite() http.Handler {
 			render(w, notFound, http.StatusNotFound, nil)
 			return
 		}
-		render(w, tool, http.StatusOK, map[string]any{"Tool": t, "Title": t.Name})
+		tpl := tool
+		if own, ok := toolPages[t.Name]; ok {
+			tpl = own
+		}
+		render(w, tpl, http.StatusOK, map[string]any{"Tool": t, "Title": t.Name})
 	})
 	mux.HandleFunc("GET /guides/{slug}", func(w http.ResponseWriter, r *http.Request) {
 		for _, g := range guides {
