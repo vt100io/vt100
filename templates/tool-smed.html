@@ -1,0 +1,97 @@
+{{define "content"}}
+{{with .Tool}}
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">vt100</a> / <a href="/#tools">Tools</a> / <span aria-current="page">{{.Name}}</span></nav>
+
+<section class="hero">
+<p class="eyebrow"><span class="tool-mark">{{.Name}}</span>{{if .Early}} · early{{end}}</p>
+<h1>What if the machine is the only state you need?</h1>
+<p class="principle">{{.Principle}}</p>
+<p class="lead">A machine already knows what is installed on it, and Tailscale already knows which machines exist and how they are tagged. smed configures servers from plain Go: it reads each machine, shows you a plan, then applies it. No inventory file, no interpreter on the target, no state file anywhere.</p>
+<div class="install">
+<code class="command"><span class="prompt" aria-hidden="true">$ </span>{{.Install}}</code>
+<a href="{{.Repo}}">View on GitHub →</a>
+</div>
+</section>
+
+<section class="prose">
+<h2>Standing on Ansible and Terraform</h2>
+<p>Ansible gets one thing right: it looks at a machine before it acts on it. Terraform gets another thing right: it shows you a plan before you commit to it. Between them they made it normal to describe servers in version control instead of logging in and typing.</p>
+<p>Neither does both. Ansible reads the world but runs a list of tasks with no plan to review first. Terraform plans, but against a state file instead of the world, and the state file drifts, needs locking, and needs its own commands to repair. The thing that was meant to give you confidence becomes the thing you are most afraid of.</p>
+<p>smed does both, with one source of truth. A plan is a live read of the real machines and a diff against what you declared. "What would change" and "what has drifted" are the same question, asked at different times.</p>
+</section>
+
+<div class="compare-wrap">
+<table class="compare">
+<thead>
+<tr><th scope="col">You need</th><th scope="col">Ansible</th><th scope="col">Terraform</th><th scope="col">smed</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">A plan before acting</th><td data-label="Ansible">check mode, where modules support it</td><td data-label="Terraform">yes, against the state file</td><td data-label="smed">yes, against the machines</td></tr>
+<tr><th scope="row">Source of truth</th><td data-label="Ansible">the machines</td><td data-label="Terraform">a state file</td><td data-label="smed">the machines</td></tr>
+<tr><th scope="row">Removing what you stopped declaring</th><td data-label="Ansible">by hand</td><td data-label="Terraform">from the state file</td><td data-label="smed"><code>Owns</code> and <code>Receipts</code>, no state file</td></tr>
+<tr><th scope="row">Which machines exist</th><td data-label="Ansible">an inventory file</td><td data-label="Terraform">resources it created</td><td data-label="smed">the tailnet and its tags</td></tr>
+<tr><th scope="row">Configuration</th><td data-label="Ansible">YAML and Jinja</td><td data-label="Terraform">HCL</td><td data-label="smed">Go</td></tr>
+<tr><th scope="row">On the target first</th><td data-label="Ansible">Python</td><td data-label="Terraform">nothing; it calls APIs</td><td data-label="smed">nothing</td></tr>
+</tbody>
+</table>
+</div>
+
+<section class="stack">
+<h2 class="section-title">What you get by asking the machine</h2>
+<div class="cards">
+<div class="card">
+<span class="card-name">A plan you can trust</span>
+<p>Every module reads, diffs, applies and verifies, and reading never changes anything. <code>Plan</code> never calls <code>Apply</code>, so it is safe against production, on a schedule, any time.</p>
+</div>
+<div class="card">
+<span class="card-name">Explain, offline</span>
+<p><code>Explain</code> answers why a step exists, what it depends on and what would make a handler run, from the code alone, without touching a network.</p>
+</div>
+<div class="card">
+<span class="card-name">A real graph</span>
+<p>Independent steps run concurrently and every host runs on its own, so a slow host never holds up a fast one. A handler is just a step that runs if the steps it watches changed something.</p>
+</div>
+<div class="card">
+<span class="card-name">Secrets stay where they live</span>
+<p>The repo holds a reference like <code>op://Engineering/web-app/api-key</code>, not an encrypted blob. It is resolved once, at run time, from 1Password, <code>pass</code> or any command that prints a secret.</p>
+</div>
+</div>
+</section>
+
+<section class="split">
+<div class="prose">
+<h2>A playbook is a Go function</h2>
+<pre><code>func webServers() *smed.HostSpec {
+	return smed.Tag("web").
+		Run(apt.Installed{Name: "nginx"}).
+		Run(file.Content{Path: "/etc/nginx/conf.d/app.conf", Data: conf, Mode: "0644"}).
+		Notify("restart-nginx").
+		Handler("restart-nginx", service.Unit{Name: "nginx", Active: true}).
+		Owns("/etc/nginx/conf.d/*") // delete any conf file not declared here
+}</code></pre>
+<p><code>smed.Tag("web")</code> is every machine tagged <code>tag:web</code> in your tailnet. No playbook type to learn and no registry: <code>go run .</code> is the dispatcher, and a module is any Go type with five methods.</p>
+<p>Machines are made the same way. On Hetzner, a plan for a server that doesn't exist yet reads:</p>
+<pre><code>+ create vt100: cx22, hel1, debian-13, €4.59/month, ports 80, 443 open, SSH key me (uploaded), joins the tailnet as tag:vt100</code></pre>
+</div>
+<aside class="panel not">
+<h2>Use Ansible if</h2>
+<p><strong>You want the ecosystem.</strong> Thousands of modules and roles, and a team that already reads YAML. smed ships six modules: file, apt, service, user, ufw and command.</p>
+<p><strong>Your sudo asks for a password.</strong> smed needs passwordless sudo today.</p>
+<p><strong>Your machines aren't on Tailscale.</strong> Plain SSH works, but host keys aren't pinned yet; Tailscale's own tunnel is what makes that safe today.</p>
+</aside>
+</section>
+
+<section class="prose">
+<h2>Where it stands</h2>
+<p>Validated against a real fleet over Tailscale, not just unit tests. The bet underneath it, a pushed Go binary over one multiplexed connection instead of a Python round trip per task, was measured first: about 270 times faster on 15 hosts and 25 commands.</p>
+<ul class="roadmap">
+<li><span class="tag">done</span> <strong>Inventory and transport</strong> from the tailnet, connection rules and sudo.</li>
+<li><span class="tag">done</span> <strong>Plan, drift and explain</strong>, handlers, rolling batches with health checks, and <code>Owns</code>/<code>Receipts</code>.</li>
+<li><span class="tag">done</span> <strong>Secrets</strong> from 1Password, the environment or any command, and <strong>servers on Hetzner</strong>.</li>
+<li><span class="tag">deferred</span> <strong>Removing one declared thing</strong>, password sudo and SSH host-key pinning.</li>
+</ul>
+</section>
+
+<p class="muted">Leans on {{range $i, $l := .LeansOn}}{{if $i}}, {{end}}{{$l}}{{end}}.</p>
+{{end}}
+{{end}}
