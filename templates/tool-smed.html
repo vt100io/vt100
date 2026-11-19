@@ -62,12 +62,12 @@
 <div class="prose">
 <h2>A playbook is a Go function</h2>
 <pre><code>func webServers() *smed.HostSpec {
-    return smed.Tag("web").
-        Run(apt.Installed{Name: "nginx"}).
-        Run(file.Content{Path: "/etc/nginx/conf.d/app.conf", Data: conf, Mode: "0644"}).
-        Notify("restart-nginx").
-        Handler("restart-nginx", service.Unit{Name: "nginx", Active: true}).
-        Owns("/etc/nginx/conf.d/*") // delete any conf file not declared here
+	return smed.Tag("web").
+		Run(apt.Installed{Name: "nginx"}).
+		Run(file.Content{Path: "/etc/nginx/conf.d/app.conf", Data: conf, Mode: "0644"}).
+		Notify("restart-nginx").
+		Handler("restart-nginx", service.Unit{Name: "nginx", Active: true}).
+		Owns("/etc/nginx/conf.d/*") // delete any conf file not declared here
 }</code></pre>
 <p><code>smed.Tag("web")</code> is every machine tagged <code>tag:web</code> in your tailnet. No playbook type to learn and no registry: <code>go run .</code> is the dispatcher, and a module is any Go type with five methods.</p>
 <p>Machines are made the same way. On Hetzner, a plan for a server that doesn't exist yet reads:</p>

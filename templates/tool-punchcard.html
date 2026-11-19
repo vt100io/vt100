@@ -36,7 +36,7 @@
 <tr><th scope="row">Toolchains</th><td data-label="Hosted CI uses">installed on a fresh runner each build</td><td data-label="Punchcard uses">pinned in <code>mise.toml</code>, installed once</td></tr>
 <tr><th scope="row">Caches</th><td data-label="Hosted CI uses">uploaded and restored between jobs</td><td data-label="Punchcard uses">a workspace per repo that stays</td></tr>
 <tr><th scope="row">Debugging a failure</th><td data-label="Hosted CI uses">push again and wait</td><td data-label="Punchcard uses">run the same command on your laptop</td></tr>
-<tr><th scope="row">Repos nobody pushes to</th><td data-label="Hosted CI uses">not built</td><td data-label="Punchcard uses">a first build on install, then nightly</td></tr>
+<tr><th scope="row">Repos nobody pushes to</th><td data-label="Hosted CI uses">not built</td><td data-label="Punchcard uses">a first build on install, then nightly if you set a time</td></tr>
 <tr><th scope="row">Adding a repo</th><td data-label="Hosted CI uses">a workflow file per repo</td><td data-label="Punchcard uses">a <code>ci</code> task; nothing on the server</td></tr>
 </tbody>
 </table>
@@ -93,7 +93,7 @@ run = "go test ./..."</code></pre>
 <section class="prose">
 <h2>How a build runs</h2>
 <ol>
-<li>GitHub sends a webhook for a push to the default branch or an updated pull request, and Punchcard checks its signature.</li>
+<li>GitHub sends a webhook for a push to the default branch or a pull request opened or updated, and Punchcard checks its signature.</li>
 <li>It brings the repo's workspace to the exact commit: <code>git fetch</code>, <code>git reset --hard</code>, <code>git clean</code>. Ignored files such as caches survive.</li>
 <li>No <code>ci</code> task means it stops there, silently.</li>
 <li>It posts a pending check, runs <code>mise install</code> and <code>mise run ci</code>, and posts the result linked to the log.</li>

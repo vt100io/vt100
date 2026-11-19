@@ -17,7 +17,7 @@
 <h2>Standing on containers</h2>
 <p>Containers made it normal to ship a program with everything it needs, isolated from the rest of the machine, and to run the same image on a laptop and in production. For a program with a runtime, a Python app or a JVM service, that solves a real problem.</p>
 <p>A static binary doesn't have the problem. It has no runtime to ship and no libraries to pin. Put it in a container anyway and you add an image to build, a registry to push to, a base image to keep patched and usually a daemon to run it, and get nothing for it.</p>
-<p>The isolation was never the container's own. It is the kernel's: namespaces, cgroups, seccomp. systemd has spent two decades exposing the same primitives to the services it runs. What it lacks is ergonomics: a correctly hardened service is 40 lines of directives before anything is about your app. unit writes them.</p>
+<p>The isolation was never the container's own. It is the kernel's: namespaces, cgroups, seccomp. systemd has spent two decades exposing the same primitives to the services it runs. What it lacks is ergonomics: a correctly hardened service is about three dozen directives before anything is about your app. unit writes them.</p>
 </section>
 
 <div class="compare-wrap">
@@ -82,11 +82,11 @@ Type=notify
 WatchdogSec=10s
 DynamicUser=yes
 CapabilityBoundingSet=
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
 PrivateNetwork=yes
 IPAddressDeny=any
 ProtectSystem=strict
-SystemCallFilter=@system-service
-MemoryDenyWriteExecute=yes
 PrivateUsers=yes
 MemoryMax=128M
 …</code></pre>
