@@ -80,17 +80,27 @@ func TestPrinciples(t *testing.T) {
 	}
 }
 
-// A tool with its own template gets it instead of the shared tool page.
-func TestToolWithOwnPage(t *testing.T) {
-	resp, page := get(t, "/tools/molt")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status %d", resp.StatusCode)
+// Every tool has its own page, each opening with its own question.
+func TestToolsHaveOwnPages(t *testing.T) {
+    headlines := map[string]string{
+        "punchcard": "is the only pipeline you need?",
+        "unit":      "What if systemd is the only runtime you need?",
+        "smed":      "What if the machine is the only state you need?",
+        "molt":      "What if DuckDB is the only engine you need?",
 	}
-	if !strings.Contains(page, "What if DuckDB is the only engine you need?") {
-		t.Error("/tools/molt is not served from tool-molt.html")
-	}
-	if _, shared := get(t, "/tools/unit"); strings.Contains(shared, "DuckDB already has") {
-		t.Error("/tools/unit got molt's page")
+    for _, tool := range tools {
+        want, ok := headlines[tool.Name]
+        if !ok {
+            t.Errorf("no headline listed for %s", tool.Name)
+            continue
+        }
+        resp, page := get(t, "/tools/"+tool.Name)
+        if resp.StatusCode != http.StatusOK {
+            t.Fatalf("/tools/%s: status %d", tool.Name, resp.StatusCode)
+        }
+        if !strings.Contains(page, want) {
+            t.Errorf("/tools/%s is not served from tool-%s.html", tool.Name, tool.Name)
+        }
 	}
 }
 
@@ -116,7 +126,7 @@ func TestNotFound(t *testing.T) {
 // but the binary.
 func TestPagesOnlyReferToEmbeddedFiles(t *testing.T) {
 	_, css := get(t, "/static/site.css")
-	pages := []string{"/", "/tools/punchcard", "/tools/molt"}
+    pages := []string{"/", "/tools/punchcard", "/tools/unit", "/tools/smed", "/tools/molt"}
 	var refs []string
 	for _, p := range pages {
 		_, body := get(t, p)

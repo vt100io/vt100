@@ -1,0 +1,106 @@
+{{define "content"}}
+{{with .Tool}}
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">vt100</a> / <a href="/#tools">Tools</a> / <span aria-current="page">{{.Name}}</span></nav>
+
+<section class="hero">
+<p class="eyebrow"><span class="tool-mark">{{.Name}}</span>{{if .Early}} · early{{end}}</p>
+<h1>What if <code>mise run ci</code> is the only pipeline you need?</h1>
+<p class="principle">{{.Principle}}</p>
+<p class="lead">If a repo pins its tools and its build is one command, CI doesn't need a language of its own. It needs to run that command, on a machine that remembers. Punchcard is a one-binary CI server that does exactly that, and posts the result on GitHub.</p>
+<div class="install">
+<code class="command"><span class="prompt" aria-hidden="true">$ </span>{{.Install}}</code>
+<a href="{{.Repo}}">View on GitHub →</a>
+</div>
+</section>
+
+{{with .Demo}}
+<figure class="demo">
+<img src="{{.}}" alt="{{$.Tool.DemoAlt}}" width="1400" height="600">
+</figure>
+{{end}}
+
+<section class="prose">
+<h2>Standing on hosted CI</h2>
+<p>Hosted CI made it normal that every push is built and tested before anyone trusts it, with the result right on the commit. It earns its complexity on a team: each job on a fresh, isolated machine, so strangers' pull requests and fifty developers can share one pipeline safely.</p>
+<p>That isolation has a price. Every build starts from nothing: a fresh machine, fresh tool installs, cold caches. The pipeline is written in the CI's own YAML, which only runs there, so a failure is debugged by pushing again and waiting.</p>
+<p>Punchcard makes the opposite trade. It is for a handful of repos and a machine you trust. It keeps a workspace per repo, resets it to the exact commit and runs the repo's own <code>ci</code> task. The toolchain is already installed and the caches are still there, so the build starts right away.</p>
+</section>
+
+<div class="compare-wrap">
+<table class="compare">
+<thead>
+<tr><th scope="col">You need</th><th scope="col">Hosted CI uses</th><th scope="col">Punchcard uses</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">The pipeline</th><td data-label="Hosted CI uses">a YAML workflow that only runs in CI</td><td data-label="Punchcard uses">the repo's <code>mise run ci</code></td></tr>
+<tr><th scope="row">Toolchains</th><td data-label="Hosted CI uses">installed on a fresh runner each build</td><td data-label="Punchcard uses">pinned in <code>mise.toml</code>, installed once</td></tr>
+<tr><th scope="row">Caches</th><td data-label="Hosted CI uses">uploaded and restored between jobs</td><td data-label="Punchcard uses">a workspace per repo that stays</td></tr>
+<tr><th scope="row">Debugging a failure</th><td data-label="Hosted CI uses">push again and wait</td><td data-label="Punchcard uses">run the same command on your laptop</td></tr>
+<tr><th scope="row">Repos nobody pushes to</th><td data-label="Hosted CI uses">not built</td><td data-label="Punchcard uses">a first build on install, then nightly</td></tr>
+<tr><th scope="row">Adding a repo</th><td data-label="Hosted CI uses">a workflow file per repo</td><td data-label="Punchcard uses">a <code>ci</code> task; nothing on the server</td></tr>
+</tbody>
+</table>
+</div>
+
+<section class="stack">
+<h2 class="section-title">What you get from one command</h2>
+<div class="cards">
+<div class="card">
+<span class="card-name">Passes here, passes there</span>
+<p>CI runs <code>mise run ci</code>, the command you run on your laptop. If it passes locally it passes in CI, and a red build can be reproduced on your own machine.</p>
+</div>
+<div class="card">
+<span class="card-name">A machine that remembers</span>
+<p>Each repo keeps its workspace. <code>node_modules</code>, build caches and toolchains survive between builds, and mise installs each tool version once.</p>
+</div>
+<div class="card">
+<span class="card-name">Builds without commits</span>
+<p>Install the GitHub App and every repo gets a first build. Set a nightly time and all of them are built again every night, so a repo that breaks on its own, from a new vulnerability or a vanished download, turns red.</p>
+</div>
+<div class="card">
+<span class="card-name">The same bytes, proven</span>
+<p>A passing build publishes the SHA-256 of every binary in <code>bin/</code> as a commit status. <a href="/tools/unit">unit</a> refuses to deploy a binary that doesn't match it.</p>
+</div>
+</div>
+</section>
+
+<section class="split">
+<div class="prose">
+<h2>A pipeline is a task</h2>
+<p>A repo opts in by having a <code>ci</code> task. Ordering and parallelism are mise's <code>depends</code>; there is no pipeline language on top:</p>
+<pre><code>[tools]
+go = "1.26"
+
+[tasks.ci]
+depends = ["lint", "test"]
+run = "go build -o bin/myapp ."
+
+[tasks.lint]
+run = "go vet ./..."
+
+[tasks.test]
+run = "go test ./..."</code></pre>
+<p>Push, and within seconds the commit has a pending check, then a green or red one linked to the build log. Prefer Make? <code>run = "make ci"</code>. If it runs in mise, it runs in Punchcard.</p>
+</div>
+<aside class="panel not">
+<h2>Use hosted CI if</h2>
+<p><strong>Strangers send pull requests.</strong> Punchcard is not a sandbox: anyone with write access runs code on the machine. Pull requests from people without it are ignored.</p>
+<p><strong>You need many builds at once.</strong> One build runs at a time, which keeps workspaces safe and the code simple.</p>
+<p><strong>You need a platform.</strong> There are no agents, runners, plugins or marketplace, and there won't be.</p>
+</aside>
+</section>
+
+<section class="prose">
+<h2>How a build runs</h2>
+<ol>
+<li>GitHub sends a webhook for a push to the default branch or an updated pull request, and Punchcard checks its signature.</li>
+<li>It brings the repo's workspace to the exact commit: <code>git fetch</code>, <code>git reset --hard</code>, <code>git clean</code>. Ignored files such as caches survive.</li>
+<li>No <code>ci</code> task means it stops there, silently.</li>
+<li>It posts a pending check, runs <code>mise install</code> and <code>mise run ci</code>, and posts the result linked to the log.</li>
+</ol>
+<p>A newer push replaces a build still waiting in the queue, so only the newest commit is built. Watch it all live with <code>punchcard tui</code>, and see how long builds waited and ran with <code>punchcard history</code>.</p>
+</section>
+
+<p class="muted">Leans on {{range $i, $l := .LeansOn}}{{if $i}}, {{end}}{{$l}}{{end}}.</p>
+{{end}}
+{{end}}

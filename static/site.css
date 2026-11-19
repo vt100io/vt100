@@ -96,7 +96,7 @@ main { display: flex; flex-direction: column; gap: 64px; }
 .guide { gap: 18px; }
 .guide h2 { margin-top: 20px; }
 .guide ul { margin: 0; padding-left: 24px; display: flex; flex-direction: column; gap: 8px; }
-.prose pre { margin: 0; background: var(--night-1); border: 1px solid var(--night-2); border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 14px; line-height: 1.6; }
+.prose pre { tab-size: 4; margin: 0; background: var(--night-1); border: 1px solid var(--night-2); border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 14px; line-height: 1.6; }
 .prose pre code { font-size: inherit; }
 
 .question { color: var(--snow); font-size: 19px; font-weight: 600; line-height: 1.4; }

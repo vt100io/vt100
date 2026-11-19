@@ -1,0 +1,113 @@
+{{define "content"}}
+{{with .Tool}}
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">vt100</a> / <a href="/#tools">Tools</a> / <span aria-current="page">{{.Name}}</span></nav>
+
+<section class="hero">
+<p class="eyebrow"><span class="tool-mark">{{.Name}}</span>{{if .Early}} · early{{end}}</p>
+<h1>What if systemd is the only runtime you need?</h1>
+<p class="principle">{{.Principle}}</p>
+<p class="lead">A statically compiled binary runs on any Linux host as it is, and every Linux server already runs systemd as PID 1. unit takes a short description of what your app needs, writes hardened systemd units for it, ships the binary over SSH and activates it. No containers, no daemons.</p>
+<div class="install">
+<code class="command"><span class="prompt" aria-hidden="true">$ </span>{{.Install}}</code>
+<a href="{{.Repo}}">View on GitHub →</a>
+</div>
+</section>
+
+<section class="prose">
+<h2>Standing on containers</h2>
+<p>Containers made it normal to ship a program with everything it needs, isolated from the rest of the machine, and to run the same image on a laptop and in production. For a program with a runtime, a Python app or a JVM service, that solves a real problem.</p>
+<p>A static binary doesn't have the problem. It has no runtime to ship and no libraries to pin. Put it in a container anyway and you add an image to build, a registry to push to, a base image to keep patched and usually a daemon to run it, and get nothing for it.</p>
+<p>The isolation was never the container's own. It is the kernel's: namespaces, cgroups, seccomp. systemd has spent two decades exposing the same primitives to the services it runs. What it lacks is ergonomics: a correctly hardened service is 40 lines of directives before anything is about your app. unit writes them.</p>
+</section>
+
+<div class="compare-wrap">
+<table class="compare">
+<thead>
+<tr><th scope="col">You need</th><th scope="col">A container stack uses</th><th scope="col">unit uses</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Shipping it</th><td data-label="A container stack uses">an image, pushed to a registry and pulled</td><td data-label="unit uses">the binary, over SSH</td></tr>
+<tr><th scope="row">Running it</th><td data-label="A container stack uses">a container runtime</td><td data-label="unit uses">systemd, already PID 1</td></tr>
+<tr><th scope="row">Isolation</th><td data-label="A container stack uses">namespaces, cgroups and seccomp, via the runtime</td><td data-label="unit uses">the same, via systemd's sandbox</td></tr>
+<tr><th scope="row">Secrets</th><td data-label="A container stack uses">environment variables or a secrets manager</td><td data-label="unit uses">systemd credentials: files only the service sees</td></tr>
+<tr><th scope="row">Inbound traffic</th><td data-label="A container stack uses">port mappings and a proxy</td><td data-label="unit uses">socket activation, Caddy for HTTPS</td></tr>
+<tr><th scope="row">Scheduled jobs</th><td data-label="A container stack uses">a cron container or the orchestrator's jobs</td><td data-label="unit uses">systemd timers</td></tr>
+</tbody>
+</table>
+</div>
+
+<section class="stack">
+<h2 class="section-title">What you get from PID 1</h2>
+<div class="cards">
+<div class="card">
+<span class="card-name">Default deny</span>
+<p>No outbound network, a read-only filesystem, no capabilities and no executing from state. You allow what the app needs, one line each, and <code>unit audit</code> runs <code>systemd-analyze security</code> to check.</p>
+</div>
+<div class="card">
+<span class="card-name">Secrets as files</span>
+<p>A script you commit says where each secret lives. unit fetches them at deploy time, and systemd hands them to the service as files in a private, memory-backed directory, never in its environment.</p>
+</div>
+<div class="card">
+<span class="card-name">The binary CI built</span>
+<p>Name a CI check and unit deploys only commits that passed it, and only a binary byte-identical to the one CI built. Two independent builds must agree, so neither a compromised CI nor a compromised laptop can ship a binary alone.</p>
+</div>
+<div class="card">
+<span class="card-name">Every deploy on record</span>
+<p>Who deployed what, from where, how long it took and how it went, one JSON line per deploy on the server. A version that fails its health check is rolled back automatically.</p>
+</div>
+</div>
+</section>
+
+<section class="split">
+<div class="prose">
+<h2>This site is a unit</h2>
+<p>vt100.io is deployed with these lines of <code>unit.toml</code>:</p>
+<pre><code>name       = "vt100"
+executable = "bin/vt100"
+port       = 8080
+domain     = "vt100.io, www.vt100.io"
+
+ci_check    = "punchcard/ci"
+ci_checksum = "punchcard/sha256"
+
+[server]
+host = "vt100"
+user = "deploy"
+
+[resources]
+memory_max = "128M"</code></pre>
+<p>From them unit writes a socket, a Caddy config and a service unit with 38 settings. An excerpt:</p>
+<pre><code>[Service]
+Type=notify
+WatchdogSec=10s
+DynamicUser=yes
+CapabilityBoundingSet=
+PrivateNetwork=yes
+IPAddressDeny=any
+ProtectSystem=strict
+SystemCallFilter=@system-service
+MemoryDenyWriteExecute=yes
+PrivateUsers=yes
+MemoryMax=128M
+…</code></pre>
+</div>
+<aside class="panel not">
+<h2>Use containers if</h2>
+<p><strong>Your app has a runtime.</strong> unit ships static binaries and nothing else. A Python or JVM app is what images are for.</p>
+<p><strong>Many people deploy.</strong> unit deploys from wherever you run it. With a team, deploys belong in CI with isolated jobs and a deploy identity no build can read.</p>
+<p><strong>You need an orchestrator.</strong> unit puts one app on a server you name. Scheduling across a fleet is someone else's job.</p>
+</aside>
+</section>
+
+<section class="prose">
+<h2>Every deploy, on the server</h2>
+<p><code>unit history</code> reads the record. Over Tailscale SSH, who and from where are answered by the server's own <code>tailscale whois</code>, not claimed by the laptop:</p>
+<pre><code>$ unit history
+WHEN              APP    VERSION            RESULT  CI       BINARY      WHO            FROM   TOOK
+2026-11-14 23:05  vt100  8cc5a1f → 4f44815  live    success  same as CI  stianh@github  elcap  17s</code></pre>
+<p>Your app does three small things in return: it uses the socket systemd opens, says <code>READY=1</code> when it serves, and pings the watchdog. In Go that is a dozen lines of the standard library.</p>
+</section>
+
+<p class="muted">Leans on {{range $i, $l := .LeansOn}}{{if $i}}, {{end}}{{$l}}{{end}}.</p>
+{{end}}
+{{end}}
