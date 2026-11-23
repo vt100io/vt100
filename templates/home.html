@@ -7,15 +7,15 @@
 <section id="together" class="stack" aria-labelledby="together-h">
 <p class="eyebrow">Together</p>
 <h2 id="together-h" class="section-title">Tools that know about each other, and one terminal pane where they meet.</h2>
-<p class="muted">Each tool does one job and works on its own. None of them is a platform. But they leave records the others can read, and one fact runs through all of them: the checksum of the binary. So one screen can say what nothing else knows on its own.</p>
+<p class="muted">Each tool owns one stage, and works on its own: punchcard takes code to an audited binary, unit takes that binary to a running service, and smed builds the machines, configures them and keeps watch over them. None of them is a platform. But they leave records the others can read, and one fact runs through all of them: the checksum of the binary. So smed's watch can say what no single tool knows on its own.</p>
 <div class="panel flow" role="list" aria-label="How one commit travels through the tools">
 <p role="listitem"><a class="chip" href="/tools/punchcard">punchcard</a> builds every push and publishes each binary's checksum</p>
 <p role="listitem"><a class="chip" href="/tools/unit">unit</a> deploys only that binary, byte for byte, and records its checksum on the server</p>
 <p role="listitem"><a class="chip" href="/tools/punchcard">punchcard</a> audits the binaries it keeps for known vulnerabilities, again every night</p>
-<p role="listitem"><a class="chip chip-accent" href="/tools/smed">vakt</a> asks every machine over Tailscale and joins it all by checksum</p>
+<p role="listitem"><a class="chip chip-accent" href="/tools/smed">smed watch</a> asks every machine over Tailscale and joins it all by checksum</p>
 </div>
 <div class="prose">
-<p>The source on <code>main</code> can be clean while a server runs last week's build. Because the checksum ties the audit to the exact binary that runs, vakt can say what no single tool can, and what to do about it:</p>
+<p>The source on <code>main</code> can be clean while a server runs last week's build. Because the checksum ties the audit to the exact binary that runs, smed's watch can say what no single tool can, and what to do about it:</p>
 <pre><code>✗ vt100   app vt100 reaches GO-2026-4441; a1b2c3d fixes it
 
   SECURITY from Punchcard
@@ -55,5 +55,5 @@
 </div>
 </section>
 
-<p class="muted">This site runs on them: <a href="/tools/smed">smed</a> configured the server, <a href="/tools/punchcard">punchcard</a> builds and audits every push, <a href="/tools/unit">unit</a> deploys it, and vakt keeps watch.</p>
+<p class="muted">This site runs on them: <a href="/tools/smed">smed</a> configured the server, <a href="/tools/punchcard">punchcard</a> builds and audits every push, <a href="/tools/unit">unit</a> deploys it, and smed keeps watch.</p>
 {{end}}
