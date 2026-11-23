@@ -78,9 +78,9 @@ var tools = []Tool{
 	{
 		Name:      "smed",
 		Question:  "Why do I keep an inventory and tags when Tailscale already has both?",
-		Answer:    `finds machines in the tailnet, shows the diff, then applies it.`,
-		Principle: "Look at the real thing before you change it.",
-		Tagline:   `Configures machines from plain Go: it reads each machine, shows a plan, then applies it. No interpreter on the target, no state file anywhere.`,
+		Answer:    `finds machines in the tailnet, shows the diff, applies it, then keeps watch.`,
+		Principle: "Look at the real thing, before you change it and after.",
+		Tagline:   `Builds and configures machines from plain Go: it reads each machine, shows a plan, applies it, and then keeps watch over what it built. No interpreter on the target, no state file anywhere.`,
 		LeansOn:   []string{"Tailscale", "SSH"},
 		Install:   "go get github.com/" + githubOwner + "/smed",
 		Why: []template.HTML{
