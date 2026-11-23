@@ -4,6 +4,28 @@
 <p class="lead">Small tools I run my hobby projects with. It started with questions, and each tool here is my answer to one.</p>
 </section>
 
+<section id="together" class="stack" aria-labelledby="together-h">
+<p class="eyebrow">Together</p>
+<h2 id="together-h" class="section-title">Tools that know about each other, and one terminal pane where they meet.</h2>
+<p class="muted">Each tool does one job and works on its own. None of them is a platform. But they leave records the others can read, and one fact runs through all of them: the checksum of the binary. So one screen can say what nothing else knows on its own.</p>
+<div class="panel flow" role="list" aria-label="How one commit travels through the tools">
+<p role="listitem"><a class="chip" href="/tools/punchcard">punchcard</a> builds every push and publishes each binary's checksum</p>
+<p role="listitem"><a class="chip" href="/tools/unit">unit</a> deploys only that binary, byte for byte, and records its checksum on the server</p>
+<p role="listitem"><a class="chip" href="/tools/punchcard">punchcard</a> audits the binaries it keeps for known vulnerabilities, again every night</p>
+<p role="listitem"><a class="chip chip-accent" href="/tools/smed">vakt</a> asks every machine over Tailscale and joins it all by checksum</p>
+</div>
+<div class="prose">
+<p>The source on <code>main</code> can be clean while a server runs last week's build. Because the checksum ties the audit to the exact binary that runs, vakt can say what no single tool can, and what to do about it:</p>
+<pre><code>✗ vt100   app vt100 reaches GO-2026-4441; a1b2c3d fixes it
+
+  SECURITY from Punchcard
+  audited 2h ago · govulncheck · bin/vt100 9463b1f
+  ✗ GO-2026-4441  golang.org/x/net v0.17.0 → v0.45.0
+  a1b2c3d fixes it: passed CI, audited without it → unit deploy</code></pre>
+<p>Deploy the fix and the line goes away by itself. When nothing needs you, the screen says <em>Nothing needs you.</em> and stays quiet. It also shows what each machine runs and uses, every deploy and package upgrade on one timeline, and a server that waits for a reboot, without logging in anywhere: Tailscale already knows who you are.</p>
+</div>
+</section>
+
 <section id="tools" aria-labelledby="tools-h">
 <h2 id="tools-h" class="eyebrow">Questions, and the tool for each</h2>
 <div class="cards">
@@ -19,7 +41,6 @@
 <section aria-labelledby="open-h">
 <h2 id="open-h" class="eyebrow">Not resolved yet</h2>
 <div class="cards three">
-<div class="card open"><span class="question">Why do I have to log in to find out a server needs a reboot?</span></div>
 <div class="card open"><span class="question">Why can't I grep the logs of all my servers at once?</span></div>
 <div class="card open"><span class="question">Why doesn't approving a pull request deploy it?</span></div>
 </div>
@@ -34,5 +55,5 @@
 </div>
 </section>
 
-<p class="muted">This site runs on them: <a href="/tools/smed">smed</a> configured the server, <a href="/tools/punchcard">punchcard</a> builds every push, and <a href="/tools/unit">unit</a> deploys it.</p>
+<p class="muted">This site runs on them: <a href="/tools/smed">smed</a> configured the server, <a href="/tools/punchcard">punchcard</a> builds and audits every push, <a href="/tools/unit">unit</a> deploys it, and vakt keeps watch.</p>
 {{end}}
