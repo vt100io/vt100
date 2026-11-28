@@ -106,6 +106,7 @@ var tools = []Tool{
 			`Every run is one transaction. A failing model or test rolls everything back, so readers never see half a rebuild or data that failed its tests.`,
 			`Column lineage comes from DuckDB too. molt asks DuckDB's binder for the plan of each model and follows every column down to the columns it reads, so <code>SELECT *</code>, <code>GROUP BY ALL</code> and macros resolve exactly as they run. There is no SQL parser in molt and no dialect to guess.`,
 			`<code>molt plan</code> compares the project with what is built, column by column: the models you changed, the columns downstream whose data will change, and whether that is breaking. <code>molt run</code> prints the same plan before it builds.`,
+			`Incremental models build only the time intervals that are new. The interval is two DuckDB variables, so the model stays plain SQL, and a change that would mix old and new definitions stops the run until you choose a full refresh or forward-only.`,
 		},
 		Not: []Not{
 			{"Multi-warehouse.", "DuckDB only; that is what keeps it this small."},

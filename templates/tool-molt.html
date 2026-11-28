@@ -53,7 +53,7 @@
 </div>
 <div class="card">
 <span class="card-name">No state outside the data</span>
-<p>What was built, its columns and their lineage are written to the database itself, in the same transaction as the data, so the two can never disagree. One binary, no Python, no server.</p>
+<p>What was built, its columns, their fingerprints and the intervals of incremental models are written to the database itself, in the same transaction as the data, so the two can never disagree. One binary, no Python, no server.</p>
 </div>
 </div>
 </section>
@@ -62,7 +62,8 @@
 <div class="prose">
 <h2>A project is a folder</h2>
 <pre><code>init.sql                         settings, secrets, variables, macros
-models/shop/orders.sql           one SELECT per model → shop.orders
+models/shop/orders.sql           one SELECT per model → shop.orders,
+                                 built a month at a time: "-- @kind: incremental"
 models/shop/order_items.sql      a view: "-- @kind: view" at the top
 models/shop/customers.sql
 models/shop/customer_revenue.sql
@@ -82,7 +83,7 @@ LINE 5:     c.contry,
 <h2>Use dbt or SQLMesh if</h2>
 <p><strong>You run more than DuckDB.</strong> molt is DuckDB only; that is what keeps it this small.</p>
 <p><strong>You want the ecosystem.</strong> Packages, a documentation site, hosted runs, integrations with catalogs and BI tools, and a community that has answered most questions already.</p>
-<p><strong>You need incremental models today.</strong> They are next for molt, and not there yet.</p>
+<p><strong>You need more than incremental models by time.</strong> molt builds new intervals of a table; it has no snapshots of slowly changing sources, merges by key or development environments yet.</p>
 <p><strong>You need a platform.</strong> Roles, approvals and a hosted catalog belong to one, and molt isn't one. It is a command; cron or a systemd timer runs it.</p>
 </aside>
 </section>
@@ -98,7 +99,31 @@ LINE 5:     c.contry,
     ~ revenue                  modified ← shop.order_items.quantity
 
 2 models changed, 2 models unchanged</code></pre>
-<p><code>molt run</code> prints the same plan before it builds, and <code>molt lineage &lt;model&gt; &lt;column&gt;</code> traces one column all the way to its sources.</p>
+<p><code>molt run</code> prints the same plan before it builds, and <code>molt lineage &lt;model&gt; &lt;column&gt;</code> traces one column all the way to its sources, through models that read CSV, Parquet or JSON files down to the files' own columns. Sources are identified by the SQL that reads them, so pointing a variable at another directory changes nothing.</p>
+</section>
+
+<section class="prose">
+<h2>Only the new days</h2>
+<p>Rebuilding everything every run is the simplest correct choice until history gets large. An incremental model is built one interval at a time, and each run builds only the complete intervals it hasn't built yet:</p>
+<pre><code>-- @kind: incremental
+-- @time_column: ordered_at
+-- @grain: day
+-- @start: 2026-01-01
+SELECT ... FROM read_parquet(getvariable('DATA_DIR') || '/orders/*.parquet')
+WHERE ordered_at &gt;= getvariable('molt_start') AND ordered_at &lt; getvariable('molt_end')</code></pre>
+<p>The interval is two DuckDB variables, not a template, so the model is still plain SQL and the build is still one script. molt deletes the interval's rows and inserts the model's rows for it, keeping only rows that belong in it, so building an interval again is always safe. The intervals it built are recorded in the run's transaction, with a fingerprint of the definition each was built with.</p>
+<p>When the definition changes, the built intervals were computed by the old one. molt won't mix the two without asking:</p>
+<pre><code>$ molt run
+~ shop.orders                          modified, breaking
+    ~ status_code              modified
+
+Blocked:
+  ✗ shop.orders: breaking change: its 331 built intervals would mix two definitions:
+    run with --full-refresh to rebuild them, or --forward-only to keep them and
+    build new intervals with the new definition
+
+nothing was built: the run is blocked</code></pre>
+<p>A change that only adds columns goes through. <code>--at</code> runs as if it were another day, which is how you test all of this.</p>
 </section>
 
 <section class="prose">
@@ -107,10 +132,13 @@ LINE 5:     c.contry,
 <ul class="roadmap">
 <li><span class="tag">done</span> <strong>Column-level lineage.</strong> From DuckDB's own bound plan, so every column resolves exactly as the query runs.</li>
 <li><span class="tag">done</span> <strong><code>molt plan</code>.</strong> What changes, column by column, and whether it is breaking for anything downstream, before anything is built.</li>
-<li><span class="tag">next</span> <strong>Incremental models.</strong> Append or merge new rows, with the intervals that were built recorded in the database, in the run's transaction, and a full refresh only when the plan says a change is breaking.</li>
+<li><span class="tag">done</span> <strong>Incremental models.</strong> Built by time interval, with the intervals recorded in the run's transaction, and a stop when a change would mix definitions.</li>
+<li><span class="tag">next</span> <strong>Backfill and lookback.</strong> Rebuild one past period, and everything downstream that depends on it, when the data behind it changes; rebuild the last few intervals every run for data that arrives late.</li>
+<li><span class="tag">next</span> <strong>Better tests.</strong> Reusable checks as DuckDB macros, warnings that don't stop the numbers, and tests that check only the intervals a run built.</li>
 <li><span class="tag">planned</span> <strong>Unit tests.</strong> A few rows in, the rows you expect out, per model.</li>
-<li><span class="tag">planned</span> <strong>Environments.</strong> Dev and prod in one file, as schemas of views over the same tables. No copies, instant rollback.</li>
-<li><span class="tag">planned</span> <strong>Lineage out.</strong> Export to JSON and OpenLineage, for the catalogs and tools you already use.</li>
+<li><span class="tag">planned</span> <strong>A worked example.</strong> A fictional insurer's loss ratio reporting, built step by step: a tutorial for what tools like molt, dbt and SQLMesh do, and molt's end-to-end test.</li>
+<li><span class="tag">later</span> <strong>A development database.</strong> Build your changes into a copy that reads everything else from production, and compare the numbers. Not SQLMesh-style virtual environments: a run is already one transaction, so nobody sees a half-built database.</li>
+<li><span class="tag">later</span> <strong>Lineage out.</strong> Export to JSON and OpenLineage, for the catalogs and tools you already use.</li>
 </ul>
 </section>
 
